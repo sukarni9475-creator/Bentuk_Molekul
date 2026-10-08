@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Template MPI</title>
+<style>
+  /* ====== KONFIGURASI WARNA (boleh diubah sesuai tema materi) ====== */
+:root {
+    --primary: #7B3FA0;
+    --primary-tua: #4A2370;
+    --accent: #F57C00;
+    --accent-tua: #C25E00;
+    --tinta: #2B1A3D;
+    --krem: #FFFFFF;
+    --krem-2: #FBF5FD;
+    --garis: #E6D3F0;
+    --hijau: #43A047;
+    --hijau-tua: #2E7D32;
+    --salah: #D32F2F;
+    --biru-muda: #FDE8F3;
+    --pink: #EC4899;
+    --pink-tua: #BE185D;
+    --bayang: 0 16px 32px rgba(74, 35, 112, 0.18);
+    --bayang-kecil: 0 8px 20px rgba(74, 35, 112, 0.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: #DFE6E9; overflow: hidden;
+    font-family: 'Nunito', 'Segoe UI', Tahoma, system-ui, sans-serif;
+    color: var(--tinta); touch-action: manipulation;
+  }
+  #viewport { position: fixed; inset: 0; overflow: hidden; }
+  #stage {
+    position: absolute; top: 0; left: 0; width: 1280px; height: 720px;
+    transform-origin: top left; background: var(--krem-2);
+    overflow: hidden; user-select: none; border-radius: 20px;
+  }
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+  .screen.active { display: flex; animation: fade .4s cubic-bezier(0.4, 0, 0.2, 1); }
+  @keyframes fade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: none; } }
+  .bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; }
+  .bg:not(:has(img)) { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); }
+  .bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+  /* ====== Topbar & Navbar ====== */
+  .topbar {
+    position: relative; z-index: 5; height: 80px; flex: 0 0 80px;
+    display: flex; align-items: center; gap: 14px; padding: 0 30px;
+    background: #FFFFFF; border-bottom: 2px solid var(--garis);
+    border-radius: 0 0 40px 40px; box-shadow: var(--bayang-kecil);
+  }
+  .topbar .judul-bar { font-weight: 800; font-size: 22px; color: var(--primary-tua); }
+  .topbar .judul-bar small { display: block; font-weight: 600; font-size: 14px; opacity: 0.7; }
+  .spacer { flex: 1; }
+  .progress-wrap { display: flex; align-items: center; gap: 12px; color: var(--primary-tua); }
+  .progress-track { width: 200px; height: 16px; border-radius: 99px; background: #E2E8F0; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-tua)); transition: width .5s ease; }
+  .progress-label { font-size: 14px; font-weight: 800; }
+  .skor-badge {
+    background: #FFF9E6; border: 3px solid #F1C40F; padding: 6px 18px;
+    border-radius: 99px; font-weight: 900; font-size: 18px; color: #856404;
+    display: flex; align-items: center; gap: 8px; box-shadow: var(--bayang-kecil);
+  }
+  .icon-btn {
+    width: 50px; height: 50px; border: none; border-radius: 50%; cursor: pointer;
+    background: var(--krem-2); color: var(--primary); font-size: 22px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; transition: all .2s; box-shadow: var(--bayang-kecil);
+  }
+  .icon-btn:active { transform: scale(.9); }
+  .content { position: relative; z-index: 4; flex: 1; padding: 30px 40px; overflow: hidden; display: flex; flex-direction: column; }
+  .center-col { display: flex; flex-direction: column; height: 100%; min-height: 0; justify-content: center; }
+  .navbar {
+    position: relative; z-index: 5; height: 90px; flex: 0 0 90px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
+    background: #FFFFFF; border-top: 2px solid var(--garis); border-radius: 40px 40px 0 0; box-shadow: 0 -8px 20px rgba(0,0,0,0.03);
+  }
+  .nav-btn {
+    min-width: 190px; height: 56px; padding: 0 30px; border: none; border-radius: 99px; cursor: pointer; font-size: 18px; font-weight: 800; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: var(--bayang-kecil); transition: all .2s;
+  }
+  .nav-btn:active { transform: translateY(2px) scale(.98); }
+  .nav-btn[disabled] { opacity: .4; cursor: not-allowed; }
+  .nav-back { background: #95A5A6; }
+  .nav-next { background: linear-gradient(135deg, var(--accent), var(--accent-tua)); }
+  .btn { border: none; border-radius: 99px; cursor: pointer; font-weight: 800; color: #fff; box-shadow: var(--bayang-kecil); transition: all .2s; }
+  .btn:active { transform: translateY(2px) scale(.96); }
+  .btn-merah { background: linear-gradient(135deg, var(--salah), #C0392B); }
+  .btn-biru { background: linear-gradient(135deg, #1D3557, #457B9D); }
+  .btn-kuning { background: linear-gradient(135deg, var(--accent), var(--accent-tua)); color: #fff; }
+  /* ====== JUDUL & MENU ====== */
+  #scr-judul .bg::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.22) 50%, rgba(0,0,0,0.55) 100%), linear-gradient(135deg, rgba(230,57,70,0.18) 0%, rgba(29,53,87,0.16) 100%); }
+  #scr-judul .bg img { opacity: 1; z-index: 0; } 
+  .judul-center { position: relative; z-index: 4; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 20px; }
+  .pita { background: #FFFFFF; color: var(--primary-tua); font-weight: 800; padding: 10px 28px; border-radius: 99px; font-size: 16px; box-shadow: var(--bayang-kecil); }
+  .judul-utama { color: #FFFFFF; font-size: 64px; font-weight: 900; line-height: 1.1; margin: 10px 0 0; text-shadow: 0 2px 6px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.5); }
+  .judul-sub { color: #F1FAEE; font-size: 26px; font-weight: 700; margin: 0; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+  .mulai-btn { margin-top: 24px; height: 80px; padding: 0 60px; font-size: 28px; border-radius: 99px; }
+  .judul-topright { position: absolute; top: 24px; right: 30px; z-index: 6; display: flex; gap: 14px; }
+  .img-deco { width: 170px; height: 170px; filter: drop-shadow(0 10px 15px rgba(255,255,255,0.2)); object-fit: contain; }
+  #scr-menu .bg { background: linear-gradient(180deg, #FDF2E9, #F1FAEE); }
+  .menu-head { position: relative; z-index: 4; text-align: center; padding: 30px 20px 10px; }
+  .menu-head h2 { font-size: 38px; margin: 0; color: var(--primary-tua); font-weight: 900; }
+  .menu-cards { position: relative; z-index: 4; flex: 1; display: flex; gap: 30px; align-items: center; justify-content: center; padding: 20px 40px 40px; }
+  .menu-card {
+    width: 310px; height: 380px; border-radius: 40px; cursor: pointer; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    box-shadow: 0 15px 35px rgba(230, 57, 70, 0.2); transition: all .3s; padding: 30px; text-align: center; border: 4px solid rgba(255,255,255,0.3);
+  }
+  .menu-card:active { transform: scale(.98); }
+  .menu-card .img-ikon { width: 120px; height: 120px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.2)); }
+  .menu-card .mc-judul { font-size: 32px; font-weight: 900; }
+  .menu-card .mc-sub { font-size: 17px; font-weight: 600; background: rgba(0,0,0,0.1); padding: 8px 16px; border-radius: 99px; }
+  .mc-belajar { background: linear-gradient(135deg, #1D3557, #457B9D); }
+  .mc-bermain { background: linear-gradient(135deg, var(--primary), var(--primary-tua)); }
+  .mc-berlatih { background: linear-gradient(135deg, var(--accent), var(--accent-tua)); }
+  /* ====== BELAJAR (SATU FRAME: GAMBAR KIRI + TEKS KANAN) ====== */
+  .belajar-frame { flex:1; display:flex; min-height:0; background:#fff; border-radius:32px; box-shadow:var(--bayang); overflow:hidden; border:3px solid var(--garis); }
+  .belajar-img-sisi { flex:0 0 35%; max-width:35%; background:linear-gradient(160deg,#FFF6ED,#FDF2E9); display:flex; align-items:center; justify-content:center; padding:16px; border-right:3px solid var(--garis); }
+  .belajar-img-sisi img { width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 12px 18px rgba(0,0,0,0.12)); border-radius:16px; }
+  .belajar-teks-sisi { flex:1 1 65%; padding:34px 46px; overflow-y:auto; display:flex; flex-direction:column; gap:18px; }
+  .belajar-teks-sisi h2 { margin:0; font-size:34px; color:var(--primary-tua); font-weight:900; line-height:1.15; }
+  .belajar-intro { background:linear-gradient(135deg,var(--primary),var(--primary-tua)); color:#fff; padding:16px 24px; border-radius:20px; font-size:22px; font-weight:800; line-height:1.3; }
+  .belajar-isi { font-size:21px; line-height:1.6; color:var(--tinta); }
+  .belajar-isi ul { margin:10px 0 0; padding-left:22px; }
+  .belajar-isi li { margin-bottom:8px; }
+  .belajar-isi b { color: var(--primary-tua); }
+  .belajar-kuis { margin-top:auto; padding:18px 20px; background:var(--biru-muda); border:2px dashed var(--primary); border-radius:20px; }
+  .belajar-kuis .bk-tanya { font-weight:800; color:var(--primary-tua); font-size:19px; margin:0 0 12px; }
+  .belajar-kuis .bk-opsi { display:flex; gap:12px; flex-wrap:wrap; }
+  /* ====== SOAL & INTERAKTIF ====== */
+  .akt-instruksi { font-size: 22px; margin: 0 0 20px; background: #fff; padding: 12px 24px; border-radius: 16px; display: inline-block; box-shadow: var(--bayang-kecil); text-align: center; border: 2px solid var(--garis); }
+  .soal { background: #FFFFFF; border-radius: 28px; padding: 24px 30px; font-size: 24px; font-weight: 800; line-height: 1.4; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); color: var(--primary-tua); border-left: 10px solid var(--primary); }
+  .opsi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .opsi { background: #FFFFFF; border: 3px solid var(--garis); border-radius: 24px; padding: 20px 24px; font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: all .2s; color: var(--tinta); }
+  .opsi:hover { border-color: var(--primary); background: var(--biru-muda); }
+  .opsi .bul { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; background: var(--garis); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 20px; color: var(--primary-tua); transition: all .2s; }
+  .opsi:hover .bul { background: var(--primary); color: #fff; }
+  .opsi.benar { border-color: var(--hijau-tua); background: #ECFDF5; color: var(--hijau-tua); }
+  .opsi.benar .bul { background: var(--hijau-tua); color: #fff; }
+  .opsi.salah { border-color: var(--salah); background: #FEF2F2; color: var(--salah); }
+  .opsi.salah .bul { background: var(--salah); color: #fff; }
+  .opsi-kompleks { cursor: pointer; border: 4px solid var(--garis); background: #fff; }
+  .opsi-kompleks.terpilih { border-color: var(--primary); background: var(--biru-muda); }
+  .opsi-kompleks.terpilih .bul { background: var(--primary); color: #fff; }
+  /* ====== TATA LETAK DUA SISI — khusus PG & PG Kompleks (jenjang SMA) ====== */
+  /* Sisi kiri = pertanyaan (+gambar/stimulus opsional), sisi kanan = opsi A–E */
+  .soal-split { display: flex; gap: 26px; flex: 1; min-height: 0; align-items: stretch; }
+  .soal-split .soal-kiri {
+    flex: 0 0 44%; max-width: 44%;
+    background: #FFFFFF; border-radius: 28px; padding: 26px 30px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-left: 10px solid var(--primary);
+    overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+  }
+  .soal-split .soal-kiri .soal-label { font-size: 14px; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-transform: uppercase; }
+  .soal-split .soal-kiri .soal-teks { font-size: 23px; font-weight: 800; line-height: 1.45; color: var(--primary-tua); }
+  .soal-split .soal-kiri .soal-stimulus { font-size: 18px; font-weight: 600; line-height: 1.6; color: var(--tinta); background: var(--krem-2); border-radius: 16px; padding: 14px 18px; border: 1px solid var(--garis); }
+  .soal-split .soal-kiri .soal-stimulus b { color: var(--primary-tua); }
+  .soal-split .soal-kiri .soal-img { width: 100%; max-height: 240px; object-fit: contain; border-radius: 16px; background: var(--krem-2); padding: 8px; }
+  .soal-split .opsi-kanan { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; justify-content: center; }
+  .soal-split .opsi-list { display: flex; flex-direction: column; gap: 12px; }
+  .soal-split .opsi-kanan .opsi { font-size: 20px; padding: 15px 20px; }
+  .soal-split .opsi-kanan .opsi .bul { width: 40px; height: 40px; flex: 0 0 40px; font-size: 18px; }
+  .soal-split .opsi-kanan .feedback { margin-top: 6px; font-size: 18px; padding: 14px 20px; }
+  .kalimat-drag { font-size: 26px; line-height: 2; font-weight: 700; background: #fff; padding: 30px; border-radius: 28px; box-shadow: var(--bayang-kecil); border: 2px solid var(--garis); }
+  .blank-slot { display: inline-block; min-width: 120px; height: 44px; border-bottom: 4px dashed var(--primary); margin: 0 10px; vertical-align: middle; text-align: center; color: var(--primary-tua); font-weight: 900; cursor: pointer; background: var(--biru-muda); border-radius: 8px 8px 0 0; }
+  .blank-slot.terisi { border-bottom-style: solid; background: #D0EEFF; border-bottom-color: var(--primary-tua); }
+  .word-pool { display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+  .word-btn { background: linear-gradient(135deg, var(--accent), var(--accent-tua)); border: none; padding: 12px 24px; font-size: 22px; font-weight: 800; border-radius: 16px; cursor: pointer; box-shadow: var(--bayang-kecil); transition: transform 0.2s; color: #fff; }
+  .word-btn:active { transform: scale(0.95); }
+  .word-btn.dipakai { opacity: 0; pointer-events: none; }
+  .jodoh-wrap { position: relative; display: flex; gap: 30px; flex: 1; min-height: 0; justify-content: center; z-index: 1; }
+  .jodoh-kol { flex: 1; display: flex; flex-direction: column; gap: 14px; justify-content: center; z-index: 2; }
+  .pair-item { 
+    position: relative; z-index: 2;
+    border: 3px solid var(--garis); background: #fff; border-radius: 24px; 
+    padding: 14px 20px; font-size: 20px; font-weight: 700; cursor: pointer; 
+    display: flex; align-items: center; justify-content: flex-start; gap: 18px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02); min-height: 85px; text-align: left; color: var(--tinta); transition: all 0.2s;
+  }
+  .pair-item:hover { border-color: var(--primary); background: var(--biru-muda); }
+  .pair-item img.img-pair { width: 50px; height: 50px; object-fit: contain; flex-shrink: 0; }
+  .pair-item.sel { border-color: var(--accent); background: #FFF9E6; transform: scale(1.02); box-shadow: var(--bayang-kecil); color: var(--accent-tua); }
+  .pair-item.locked { border-color: var(--hijau-tua); background: #ECFDF5; cursor: default; color: var(--hijau-tua); }
+  .pair-item.salah { border-color: var(--salah); background: #FEF2F2; animation: shake 0.4s; color: var(--salah); }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .jodoh-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 0.5s ease-in-out forwards; }
+  .scene-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+  .obj-card { 
+    background: #fff; border: 3px solid var(--garis); border-radius: 28px; 
+    padding: 20px; font-size: 22px; font-weight: 700; cursor: pointer; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    gap: 16px; text-align: center; box-shadow: var(--bayang-kecil); transition: all 0.2s; color: var(--tinta);
+  }
+  .obj-card:hover { border-color: var(--primary); background: var(--biru-muda); }
+  .obj-card img.img-obj { width: auto; height: 130px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.1)); }
+  .obj-card.benar { border-color: var(--hijau-tua); background: #ECFDF5; color: var(--hijau-tua); }
+  .obj-card.salah { border-color: var(--salah); background: #FEF2F2; color: var(--salah); }
+  .urut-item { 
+    background: #fff; border: 2px solid var(--garis); border-radius: 24px; padding: 12px 20px; 
+    font-size: 20px; font-weight: 700; display: flex; align-items: center; 
+    gap: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); margin-bottom: 12px; 
+    min-height: 70px; color: var(--tinta);
+  }
+  .urut-item .num { background: var(--primary); color: #fff; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; flex-shrink: 0; }
+  .urut-item > span:nth-child(2) { flex: 1; line-height: 1.3; } 
+  .urut-item .btn-kuning { flex: 0 0 auto; width: 44px; height: 44px; padding: 0; display:flex; align-items:center; justify-content:center; font-size: 18px; } 
+  .bs-grid { display: flex; gap: 24px; }
+  .bs-btn { flex: 1; height: 120px; border-radius: 40px; border: none; font-size: 36px; font-weight: 900; color: #fff; cursor: pointer; box-shadow: var(--bayang-kecil); transition: all 0.2s; }
+  .bs-btn:active { transform: scale(0.95); }
+  .bs-benar { background: linear-gradient(135deg, var(--hijau), var(--hijau-tua)); }
+  .bs-salah { background: linear-gradient(135deg, var(--salah), #C0392B); }
+  .feedback { border-radius: 24px; padding: 18px 24px; font-size: 20px; font-weight: 700; line-height: 1.5; display: none; text-align: center; margin-top: 16px; }
+  .feedback.show { display: block; }
+  .feedback.ok { background: #D1FAE5; border: 3px solid var(--hijau-tua); color: var(--hijau-tua); }
+  .feedback.no { background: #FEE2E2; border: 3px solid var(--salah); color: var(--salah); }
+  /* ====== GAME: KUMPUL (ketuk berwaktu) ====== */
+  .kumpul-hud { display: flex; justify-content: center; gap: 20px; align-items: center; margin-bottom: 14px; }
+  .kumpul-hud .hud-box { background: #fff; padding: 8px 24px; border-radius: 99px; font-weight: 900; font-size: 22px; box-shadow: var(--bayang-kecil); border: 3px solid var(--garis); }
+  .kumpul-hud .hud-time { color: var(--salah); border-color: var(--salah); }
+  .kumpul-hud .hud-coll { color: var(--hijau-tua); border-color: var(--hijau-tua); }
+  .kumpul-area { position: relative; width: 100%; flex: 1; min-height: 0; background: radial-gradient(circle at 50% 40%, #FFFDF5, #FDF2E9); border: 4px dashed var(--accent); border-radius: 28px; overflow: hidden; box-shadow: inset 0 4px 14px rgba(0,0,0,0.04); }
+  .kumpul-flag { position: absolute; width: 92px; cursor: pointer; animation: floatUp 0.25s ease; }
+  .kumpul-flag:active { transform: scale(0.85); }
+  @keyframes floatUp { from { transform: scale(0) rotate(-15deg); } to { transform: scale(1) rotate(0); } }
+  .kumpul-flag img { width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.25)); border-radius: 4px; }
+  /* ====== GAME: SAMBUNG (lanjutkan urutan) ====== */
+  .sambung-lirik { background: linear-gradient(135deg, var(--primary), var(--primary-tua)); color:#fff; padding: 26px 30px; border-radius: 28px; font-size: 28px; font-weight: 800; text-align:center; line-height:1.4; box-shadow: var(--bayang); }
+  .sambung-opsi { display:flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+  .sambung-btn { background:#fff; border: 3px solid var(--garis); border-radius: 20px; padding: 18px 24px; font-size: 23px; font-weight: 700; cursor:pointer; color: var(--tinta); transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+  .sambung-btn:hover { border-color: var(--primary); background: var(--biru-muda); }
+  .sambung-btn.benar { border-color: var(--hijau-tua); background:#ECFDF5; color: var(--hijau-tua); }
+  .sambung-btn.salah { border-color: var(--salah); background:#FEF2F2; color: var(--salah); }
+  /* ====== EFEK & MODAL ====== */
+  #efek-salah { position: absolute; inset: 0; z-index: 45; pointer-events: none; background: rgba(231, 76, 60, 0); transition: background 0.6s ease-out; }
+  #efek-salah.nyala { background: rgba(231, 76, 60, 0.4); transition: none; }
+  .confetti { position: absolute; width: 12px; height: 12px; z-index: 45; opacity: 1; pointer-events: none; animation: pop 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+  @keyframes pop { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0) rotate(720deg); opacity: 0; } }
+  .modal-bg { position: absolute; inset: 0; z-index: 50; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; }
+  .modal-bg.show { display: flex; }
+  .modal { width: 800px; max-width: 90%; max-height: 85%; overflow: auto; background: #FFFFFF; border-radius: 40px; padding: 40px; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.4); border: 3px solid var(--primary); }
+  .modal h3 { margin: 0 0 16px; font-size: 32px; color: var(--primary-tua); font-weight: 900; }
+  .modal p, .modal li, .info-tabel td { font-size: 20px; line-height: 1.6; color: var(--tinta); }
+  .modal .tutup { position: absolute; top: 24px; right: 24px; width: 44px; height: 44px; border-radius: 50%; font-weight: bold; background: var(--krem-2); color: var(--salah); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--garis); font-size: 20px; }
+  .input-form { width: 100%; padding: 16px 20px; font-size: 22px; font-family: inherit; font-weight: 700; color: var(--tinta); border: 3px solid var(--garis); border-radius: 16px; margin-bottom: 16px; outline: none; transition: border 0.3s; background: #fff; }
+  .input-form:focus { border-color: var(--primary); background: var(--biru-muda); }
+  .info-tabel { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
+  .info-tabel td { border: 2px solid var(--garis); padding: 12px 16px; }
+  .info-tabel td:first-child { font-weight: 800; background: var(--krem-2); width: 40%; color: var(--primary-tua); }
+  .akhir { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+  .akhir h2 { font-size: 46px; color: var(--primary-tua); margin: 0; font-weight: 900; }
+  .akhir .skor-angka { font-size: 70px; font-weight: 900; color: var(--accent-tua); margin: 5px 0; text-shadow: 0 4px 10px rgba(240, 147, 43, 0.3); }
+  .akhir .identitas { font-size: 22px; font-weight: 700; background: #FFF9E6; padding: 10px 24px; border-radius: 99px; color: #856404; border: 2px solid #F1C40F; box-shadow: var(--bayang-kecil); }
+  #audio-widget {
+    position: absolute; top: 650px; left: 540px; z-index: 60; background: #FFFFFF; padding: 6px 16px; border-radius: 99px;
+    display: none; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); border: 2px solid var(--garis);
+  }
+  .icon-btn-small { width: 32px; height: 32px; border: none; border-radius: 50%; background: var(--krem-2); color: var(--primary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #volume-slider { -webkit-appearance: none; width: 100px; height: 6px; background: #DFE6E9; border-radius: 5px; outline: none; cursor: pointer; }
+  #volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+  .judul-topright .home-section-btn {
+    width:auto; min-width:142px; height:48px; padding:0 18px; border-radius:99px;
+    background:rgba(255,255,255,.96); color:var(--primary-tua); font-size:15px; font-weight:900;
+    border:2px solid rgba(255,255,255,.8); box-shadow:var(--bayang-kecil); display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .judul-topright .home-section-btn:hover { background:var(--biru-muda); transform:translateY(-1px); }
+  .referensi-list { margin:8px 0 18px; padding-left:24px; }
+  .referensi-list li { margin-bottom:10px; font-size:17px; line-height:1.45; }
+  .referensi-note { background:var(--biru-muda); border-left:6px solid var(--primary); padding:12px 16px; border-radius:12px; font-size:16px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    
+    <div id="efek-salah"></div>
+    <section id="scr-judul" class="screen active">
+      <div class="bg"><img id="cfg-bgjudul" src="./asset/img/bg_judul.jpg" alt="" onerror="imgErr(this)"></div>
+      <div class="judul-topright">
+        <button class="icon-btn home-section-btn" data-sfx onclick="openModal('modal-info')" title="Data Pelajaran">📘 Data Pelajaran</button>
+        <button class="icon-btn home-section-btn" data-sfx onclick="openModal('modal-dev')" title="Profil Pengembang">👩‍🏫 Profil</button>
+        <button class="icon-btn home-section-btn" data-sfx onclick="openModal('modal-ref')" title="Referensi">📚 Referensi</button>
+      </div>
+      <div class="judul-center">
+        <h1 class="judul-utama" id="cfg-judul">Judul Materi</h1>
+        <p class="judul-sub" id="cfg-subjudul">Sub Judul Materi</p>
+        <button class="btn btn-kuning mulai-btn" data-sfx onclick="openModal('modal-login')">▶ MULAI</button>
+      </div>
+    </section>
+    <section id="scr-menu" class="screen">
+      <div class="bg"></div>
+      <div class="topbar">
+        <div class="judul-bar"><span id="cfg-judul-menu">Judul Materi</span><small>Pilih kegiatan belajar kalian</small></div>
+        <div class="spacer"></div>
+        <button class="icon-btn" data-sfx onclick="goJudul()" title="Beranda">⌂</button>
+      </div>
+      <div class="menu-head">
+        <h2>Anak-anak, mari kita mulai pembelajaran!</h2>
+        <p>Ibu sarankan kalian mulai dari <b>Belajar</b>, lanjutkan ke <b>Bermain</b>, lalu periksa pemahaman kalian melalui <b>Berlatih</b>.</p>
+      </div>
+      <div class="menu-cards">
+        <button class="menu-card mc-belajar" data-sfx onclick="startBelajar()">
+          <img src="./asset/img/menu_belajar.png" class="img-ikon" alt="Belajar" style="border-radius:50%; background:#fff; padding:10px;" onerror="imgErr(this)">
+          <div class="mc-judul">Belajar</div>
+          <div class="mc-sub">Materi Pembelajaran</div>
+        </button>
+        <button class="menu-card mc-bermain" data-sfx onclick="startBermain()">
+          <img src="./asset/img/menu_bermain.png" class="img-ikon" alt="Bermain" style="border-radius:50%; background:#fff; padding:10px;" onerror="imgErr(this)">
+          <div class="mc-judul">Bermain</div>
+          <div class="mc-sub">10 Permainan Interaktif</div>
+        </button>
+        <button class="menu-card mc-berlatih" data-sfx onclick="startBerlatih()">
+          <img src="./asset/img/menu_berlatih.png" class="img-ikon" alt="Berlatih" style="border-radius:50%; background:#fff; padding:10px;" onerror="imgErr(this)">
+          <div class="mc-judul">Berlatih</div>
+          <div class="mc-sub">10 Soal Evaluasi</div>
+        </button>
+      </div>
+    </section>
+    <section id="scr-belajar" class="screen">
+      <div class="bg"></div>
+      <div class="topbar">
+        <div class="judul-bar">Belajar<small id="belajar-sub">Materi</small></div>
+        <div class="spacer"></div>
+        <div class="progress-wrap"><span class="progress-label" id="belajar-plabel">1/4</span><div class="progress-track"><div class="progress-fill" id="belajar-pfill"></div></div></div>
+        <button class="icon-btn" data-sfx onclick="goMenu()" title="Menu">☰</button>
+      </div>
+      <div class="content" id="belajar-content"></div>
+      <div class="navbar">
+        <button class="nav-btn nav-back" id="belajar-prev" data-sfx onclick="belajarPrev()">◀ Sebelumnya</button>
+        <button class="nav-btn nav-next" id="belajar-next" data-sfx onclick="belajarNext()">Selanjutnya ▶</button>
+      </div>
+    </section>
+    <section id="scr-bermain" class="screen">
+      <div class="bg"></div>
+      <div class="topbar">
+        <div class="judul-bar">Bermain<small id="bermain-sub">Aktivitas Interaktif</small></div>
+        <div class="spacer"></div>
+        <div class="skor-badge">🏆 Skor: <span id="skor-bermain-angka">0</span></div>
+        <div class="progress-wrap" style="margin-left:10px"><span class="progress-label" id="bermain-plabel">1/10</span><div class="progress-track" style="width:120px"><div class="progress-fill" id="bermain-pfill"></div></div></div>
+        <button class="icon-btn" data-sfx onclick="goMenu()" title="Menu">☰</button>
+      </div>
+      <div class="content" id="bermain-content"></div>
+      <div class="navbar">
+        <button class="nav-btn nav-back" data-sfx onclick="bermainPrev()">◀ Sebelumnya</button>
+        <button class="nav-btn nav-next" id="bermain-next" data-sfx onclick="bermainNext()" disabled>Selanjutnya ▶</button>
+      </div>
+    </section>
+    <section id="scr-berlatih" class="screen">
+      <div class="bg"></div>
+      <div class="topbar">
+        <div class="judul-bar">Berlatih<small id="berlatih-sub">Uji Pemahaman</small></div>
+        <div class="spacer"></div>
+        <div class="progress-wrap"><span class="progress-label" id="berlatih-plabel">1/10</span><div class="progress-track" style="width:160px"><div class="progress-fill" id="berlatih-pfill"></div></div></div>
+        <button class="icon-btn" data-sfx onclick="goMenu()" title="Menu">☰</button>
+      </div>
+      <div class="content" id="berlatih-content"></div>
+      <div class="navbar">
+        <button class="nav-btn nav-back" data-sfx onclick="berlatihPrev()">◀ Sebelumnya</button>
+        <button class="nav-btn nav-next" id="berlatih-next" data-sfx onclick="berlatihNext()" disabled>Selanjutnya ▶</button>
+      </div>
+    </section>
+    <div class="modal-bg" id="modal-login">
+      <div class="modal" style="width: 550px; text-align: center; padding: 50px;">
+        <button class="tutup" data-sfx onclick="closeModal('modal-login')">✕</button>
+        <h3>Selamat Datang!</h3>
+        <p style="margin-bottom:24px;">Silakan isi identitasmu sebelum mulai belajar.</p>
+        <input type="text" id="in-nama" class="input-form" placeholder="Nama Lengkap" required>
+        <input type="text" id="in-sekolah" class="input-form" placeholder="Asal Sekolah">
+        <div id="login-pesan" style="color:var(--salah); font-weight:bold; margin-bottom:16px; display:none;">⚠️ Nama belum diisi!</div>
+        <button class="btn btn-kuning" style="width:100%; height:64px; font-size:24px; margin-top:10px;" data-sfx onclick="simpanIdentitas()">Mulai Belajar</button>
+      </div>
+    </div>
+    <div class="modal-bg" id="modal-info">
+      <div class="modal">
+        <button class="tutup" data-sfx onclick="closeModal('modal-info')">✕</button>
+        <h3>Informasi Materi</h3>
+        <table class="info-tabel">
+          <tr><td>Fase / Kelas</td><td id="cfg-fase">Fase ... • Kelas ...</td></tr>
+          <tr><td>Mata Pelajaran</td><td id="cfg-mapel">Mata Pelajaran</td></tr>
+          <tr><td>Unit</td><td id="cfg-unit">Unit</td></tr>
+          <tr><td>Sub Unit</td><td id="cfg-subunit">Sub Unit</td></tr>
+          <tr><td>Tujuan Pembelajaran</td><td id="cfg-tp">Tujuan Pembelajaran (TP)</td></tr>
+        </table>
+      </div>
+    </div>
+    
+    <div class="modal-bg" id="modal-dev">
+      <div class="modal" style="width: 750px; padding: 40px;">
+        <button class="tutup" data-sfx onclick="closeModal('modal-dev')">✕</button>
+        <h3 style="text-align: center; margin-bottom: 24px;">Profil Pengembang</h3>
+        <div style="display: flex; gap: 30px; align-items: center; background: #F8FAFC; padding: 30px; border-radius: 32px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02); border: 2px solid var(--garis);">
+          <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+            <div style="position: relative;">
+              <img id="cfg-foto" src="./asset/img/profil.png" alt="Foto Pengembang" style="width: 160px; height: 200px; border-radius: 16px; object-fit: cover; box-shadow: var(--bayang); background: var(--primary); border: 4px solid #fff;" onerror="imgErr(this)">
+              <div style="position: absolute; bottom: -8px; right: -8px; background: var(--hijau-tua); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid #fff; box-shadow: var(--bayang-kecil);" title="Terverifikasi">✓</div>
+            </div>
+            <div id="cfg-nama2" style="background: var(--accent); color: #fff; font-weight: 900; padding: 6px 18px; border-radius: 99px; font-size: 15px; box-shadow: var(--bayang-kecil);">Nama Pengembang</div>
+          </div>
+          <div style="flex: 1;">
+            <table class="info-tabel" style="margin-top: 0; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+              <tr><td style="width: 35%;">Nama Pengembang</td><td id="cfg-nama" style="font-weight: 800; color: var(--primary-tua); font-size: 22px;">Nama Pengembang</td></tr>
+              <tr><td>Instansi</td><td id="cfg-instansi">Nama Instansi / Sekolah</td></tr>
+              <tr><td>Surel</td><td id="cfg-surel">Surel Pengembang</td></tr>
+              <tr><td>Tahun Pembuatan</td><td id="cfg-tahun">Tahun Pembuatan</td></tr>
+              <tr><td>Jenis</td><td id="cfg-jenis">Media Pembelajaran Interaktif (MPI)</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="modal-ref">
+      <div class="modal" style="width: 980px; padding: 34px 40px;">
+        <button class="tutup" data-sfx onclick="closeModal('modal-ref')">✕</button>
+        <h3>Referensi</h3>
+        <h4 style="font-size:20px;color:var(--primary-tua);margin:12px 0 6px;">Sumber Materi</h4>
+        <ol class="referensi-list" id="cfg-ref-materi"></ol>
+        <h4 style="font-size:20px;color:var(--primary-tua);margin:12px 0 6px;">Sumber Aset Visual dan Audio</h4>
+        <ol class="referensi-list" id="cfg-ref-aset"></ol>
+        <h4 style="font-size:20px;color:var(--primary-tua);margin:12px 0 6px;">Keterangan Kecerdasan Artifisial</h4>
+        <ul class="referensi-list" id="cfg-ref-ai"></ul>
+      </div>
+    </div>
+    <div id="audio-widget">
+      <button class="icon-btn-small" id="sound-toggle" data-sfx="no" onclick="toggleSound()" title="Suara">🔊</button>
+      <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" oninput="changeVolume(this.value)">
+    </div>
+  </div>
+</div>
+<script>
+/* ##############################################################
+   #  BAGIAN A — KONFIGURASI (EDIT DI SINI SAJA)               #
+   ############################################################## */
+
+/* --- 1) IDENTITAS MATERI & PROFIL --- */
+const CONFIG = {
+  judul:    "Bentuk Molekul",
+  subJudul: "Teori VSEPR dan Kepolaran Molekul",
+  fase:     "Fase F • Kelas XI",
+  mapel:    "Kimia",
+  unit:     "Ikatan Kimia",
+  subUnit:  "Bentuk Molekul",
+  tp:       "Murid mampu menganalisis bentuk molekul berdasarkan teori tolakan pasangan elektron (VSEPR) dan hubungannya dengan kepolaran molekul secara tepat dan kritis.",
+  logo:     "./asset/img/logo.png",
+  bgJudul:  "./asset/img/bg_judul.jpg",
+  profil: {
+    nama:     "Sukarni",
+    instansi: "SMAN 1 Tarumajaya",
+    surel:    "sukarni94@guru.sma.belajar.id",
+    tahun:    "2026",
+    jenis:    "Media Pembelajaran Interaktif (MPI)",
+    foto:     "./asset/img/profil.png"
+  },
+  referensi: {
+    materi: [
+      "Badan Standar, Kurikulum, dan Asesmen Pendidikan. (2025). Keputusan Kepala BSKAP Nomor 046/H/KR/2025 tentang Capaian Pembelajaran pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah. Kementerian Pendidikan Dasar dan Menengah.",
+      "Chang, R., & Goldsby, K. A. (2016). Chemistry (12th ed.). McGraw-Hill Education.",
+      "Petrucci, R. H., Herring, F. G., Madura, J. D., & Bissonnette, C. (2017). General Chemistry: Principles and Modern Applications (11th ed.). Pearson."
+    ],
+    aset: [
+      "OpenAI. (2026). ChatGPT (Versi GPT-4o). Seluruh ilustrasi, elemen visual, dan desain dalam media pembelajaran ini dihasilkan melalui prompting pada layanan OpenAI. Ketentuan Penggunaan OpenAI (Terms of Use). https://openai.com/policies/row-terms-of-use/",
+      "MyInstants. (2026). Efek suara (sound effect) yang digunakan pada media pembelajaran. Lisensi sesuai ketentuan penggunaan MyInstants. https://www.myinstants.com/"
+    ],
+    ai: [
+      "Ilustrasi dan gambar pada halaman muka dan halaman materi, bermain, dan berlatih dibuat menggunakan ChatGPT.",
+      "Seluruh materi, soal, dan pembahasan disusun oleh pengembang."
+    ]
+  }
+};
+
+/* --- 2) BELAJAR — gambar kiri, penjelasan kanan (1 frame) --- */
+const MATERI = [
+  { judul:"1. Mengapa Bentuk Molekul Penting?", img:"./asset/img/materi_1.png",
+    intro:"Anak-anak, pernahkah kalian bertanya mengapa molekul air tampak 'bengkok', sedangkan molekul karbon dioksida lurus?",
+    isi:"<p>Setiap molekul memiliki <b>bentuk tiga dimensi</b> yang ditentukan oleh susunan atom-atom di sekitar <b>atom pusat</b>.</p><ul><li>Bentuk molekul memengaruhi <b>kepolaran</b>, titik didih, dan kelarutan suatu zat.</li><li>Bentuk molekul tidak dapat dilihat langsung, tetapi dapat diprediksi dengan <b>teori VSEPR</b>.</li><li>VSEPR berasal dari <i>Valence Shell Electron Pair Repulsion</i>, yaitu tolakan pasangan elektron kulit valensi.</li></ul>",
+    kuis:{ tanya:"Bentuk molekul dapat diprediksi menggunakan teori ...", o:["Rutherford","VSEPR"], j:1 } },
+
+  { judul:"2. Teori VSEPR: Pasangan Elektron Saling Menolak", img:"./asset/img/materi_2.png",
+    intro:"Bayangkan beberapa balon diikat pada satu titik. Balon-balon itu akan saling menjauh, bukan? Begitu juga pasangan elektron.",
+    isi:"<p>Pasangan elektron di sekitar atom pusat bermuatan negatif, sehingga <b>saling tolak-menolak</b> dan mengambil posisi sejauh mungkin.</p><ul><li><b>PEI</b> (pasangan elektron ikatan): dipakai bersama oleh dua atom.</li><li><b>PEB</b> (pasangan elektron bebas): hanya milik atom pusat, sehingga menempati ruang lebih besar.</li><li>Urutan kekuatan tolakan: <b>PEB–PEB &gt; PEB–PEI &gt; PEI–PEI</b>.</li></ul>",
+    kuis:{ tanya:"Tolakan yang paling kuat terjadi antara ...", o:["PEI dan PEI","PEB dan PEB"], j:1 } },
+
+  { judul:"3. Domain Elektron dan Notasi AXE", img:"./asset/img/materi_3.png",
+    intro:"Supaya lebih mudah, Ibu kenalkan 'kode' untuk memetakan atom pusat, namanya notasi AXE.",
+    isi:"<p>Satu <b>domain elektron</b> adalah satu daerah tempat elektron berada di sekitar atom pusat, yaitu satu ikatan (tunggal, rangkap, atau rangkap tiga) atau satu PEB.</p><p style='font-size:25px;text-align:center;'><b>AX<sub>n</sub>E<sub>m</sub></b></p><ul><li><b>A</b> = atom pusat, <b>X</b> = atom terikat (n buah), <b>E</b> = PEB (m buah).</li><li>Ikatan rangkap dihitung sebagai <b>satu domain</b>.</li><li>Contoh: CH₄ → AX₄, NH₃ → AX₃E, H₂O → AX₂E₂.</li></ul>",
+    kuis:{ tanya:"Notasi AXE untuk molekul NH₃ adalah ...", o:["AX₃E","AX₂E₂"], j:0 } },
+
+  { judul:"4. Dua dan Tiga Domain Elektron", img:"./asset/img/materi_4.png",
+    intro:"Kita mulai dari yang paling sederhana ya. Perhatikan bagaimana satu PEB saja sudah mengubah bentuk molekul.",
+    isi:"<ul><li><b>AX₂</b> (2 domain): <b>linear</b>, sudut 180°. Contoh: BeCl₂ dan CO₂.</li><li><b>AX₃</b> (3 domain): <b>segitiga planar</b>, sudut 120°. Contoh: BF₃.</li><li><b>AX₂E</b> (3 domain, 1 PEB): <b>bentuk V</b>, sudut &lt; 120°. Contoh: SO₂.</li></ul><p>PEB menekan pasangan ikatan, sehingga sudut ikatan menjadi sedikit lebih kecil.</p>",
+    kuis:{ tanya:"Molekul BF₃ (AX₃) berbentuk ...", o:["segitiga planar","linear"], j:0 } },
+
+  { judul:"5. Empat Domain Elektron", img:"./asset/img/materi_5.png",
+    intro:"Ini bagian yang Ibu suka, karena pengaruh PEB terlihat jelas pada tiga molekul yang sangat kita kenal.",
+    isi:"<p>Ketiga molekul ini punya susunan domain yang sama, yaitu <b>tetrahedral</b>, tetapi bentuk molekulnya berbeda karena jumlah PEB.</p><ul><li><b>AX₄</b>: <b>tetrahedral</b>, 109,5°. Contoh: CH₄.</li><li><b>AX₃E</b>: <b>piramida trigonal</b>, ±107°. Contoh: NH₃.</li><li><b>AX₂E₂</b>: <b>bentuk V</b>, ±104,5°. Contoh: H₂O.</li></ul><p>Semakin banyak PEB, semakin kecil sudut ikatannya.</p>",
+    kuis:{ tanya:"Molekul H₂O (AX₂E₂) berbentuk ...", o:["linear","bentuk V"], j:1 } },
+
+  { judul:"6. Lima dan Enam Domain Elektron", img:"./asset/img/materi_6.png",
+    intro:"Beberapa atom pusat mampu menampung lebih dari empat domain. Mari kita lihat bentuk-bentuk yang lebih 'ramai'.",
+    isi:"<ul><li><b>5 domain</b>: AX₅ = <b>bipiramida trigonal</b> (PCl₅); AX₄E = <b>jungkat-jungkit</b> (SF₄); AX₃E₂ = <b>bentuk T</b> (ClF₃); AX₂E₃ = <b>linear</b> (XeF₂).</li><li><b>6 domain</b>: AX₆ = <b>oktahedral</b> (SF₆); AX₅E = <b>piramida segiempat</b> (BrF₅); AX₄E₂ = <b>segiempat planar</b> (XeF₄).</li></ul><p>Pada 5 domain, PEB menempati posisi <b>ekuator</b> agar tolakannya lebih kecil.</p>",
+    kuis:{ tanya:"Molekul SF₆ (AX₆) berbentuk ...", o:["oktahedral","tetrahedral"], j:0 } },
+
+  { judul:"7. Kepolaran Ikatan dan Momen Dipol", img:"./asset/img/materi_7.png",
+    intro:"Sekarang kita beralih ke kepolaran. Bayangkan tarik tambang antara dua atom yang kekuatannya tidak sama.",
+    isi:"<p>Perbedaan <b>keelektronegatifan</b> membuat elektron ikatan lebih dekat ke atom yang lebih elektronegatif.</p><ul><li>Atom yang lebih elektronegatif bermuatan parsial negatif (δ⁻), pasangannya δ⁺.</li><li>Ikatan <b>polar</b> terbentuk dari atom yang keelektronegatifannya berbeda, misalnya H–Cl.</li><li>Ikatan <b>nonpolar</b> terbentuk dari atom yang sama, misalnya H–H dan Cl–Cl.</li><li>Kepolaran ikatan dinyatakan dengan <b>momen dipol (μ)</b>, besaran vektor yang digambar sebagai panah menuju atom yang lebih elektronegatif.</li></ul>",
+    kuis:{ tanya:"Pada ikatan H–Cl (EN H = 2,1; Cl = 3,0), muatan δ⁻ berada pada atom ...", o:["H","Cl"], j:1 } },
+
+  { judul:"8. Bentuk Molekul dan Kepolaran Molekul", img:"./asset/img/materi_8.png",
+    intro:"Ini kunci pelajaran kita hari ini, anak-anak: ikatan polar belum tentu membuat molekul polar. Bentuk molekullah yang ikut menentukan!",
+    isi:"<p>Kepolaran molekul ditentukan dari <b>jumlah vektor momen dipol</b> semua ikatannya.</p><ul><li>Susunan <b>simetris</b>: vektor saling meniadakan, molekul <b>nonpolar</b> (CO₂, BF₃, CH₄, CCl₄).</li><li>Susunan <b>tidak simetris</b>: vektor tidak habis, molekul <b>polar</b> (H₂O, NH₃, SO₂, CHCl₃).</li><li>Kepolaran memengaruhi kelarutan: zat polar larut dalam pelarut polar, zat nonpolar larut dalam pelarut nonpolar.</li></ul>",
+    kuis:{ tanya:"CO₂ berikatan polar, tetapi molekulnya nonpolar karena ...", o:["momen dipolnya saling meniadakan","ikatannya nonpolar"], j:0 } },
+
+  { judul:"9. Kesimpulan", img:"./asset/img/materi_9.png",
+    intro:"Hebat, anak-anak! Sekarang rangkumlah Bentuk Molekul sebagai satu alur yang utuh.",
+    isi:"<ul><li>Pasangan elektron pada atom pusat <b>saling tolak-menolak</b> dan menempati posisi sejauh mungkin (teori VSEPR).</li><li>Tolakan <b>PEB–PEB &gt; PEB–PEI &gt; PEI–PEI</b>, sehingga PEB memperkecil sudut ikatan.</li><li>Bentuk molekul ditentukan dari <b>notasi AXE</b>: jumlah domain elektron dan jumlah PEB.</li><li>Ikatan polar ditandai oleh momen dipol, yaitu besaran <b>vektor</b>.</li><li>Molekul <b>simetris</b> bersifat nonpolar, sedangkan molekul <b>tidak simetris</b> bersifat polar.</li></ul><p><b>Pesan Ibu:</b> jangan menghafal bentuk molekul satu per satu. Hitunglah dahulu PEI dan PEB, lalu bayangkan pasangan elektron saling menjauh, dan kalian akan menemukan bentuknya sendiri.</p>"
+  }
+];
+
+/* --- 3) BERMAIN — 10 permainan, 5 ragam interaktivitas --- */
+const dataBermain = [
+  { t:'jodoh', sub:'Jodohkan Rumus dengan Bentuk', ins:'Anak-anak, jodohkan rumus molekul berikut dengan bentuk molekul yang tepat!',
+    pairs:[{n:1,teks:'CO₂ (AX₂)'},{n:2,teks:'H₂O (AX₂E₂)'},{n:3,teks:'CH₄ (AX₄)'}],
+    imgs:[{n:1,i:'./asset/img/game_linear.png',name:'Linear'},{n:2,i:'./asset/img/game_bentuk_v.png',name:'Bentuk V'},{n:3,i:'./asset/img/game_tetrahedral.png',name:'Tetrahedral'}] },
+
+  { t:'klik', sub:'Pilih Bentuk Molekul NH₃', ins:'Atom pusat N pada NH₃ memiliki 3 PEI dan 1 PEB. Pilih bentuk molekul NH₃ yang tepat!',
+    opsi:[
+      {imgPath:'./asset/img/game_piramida.png', t:'Piramida trigonal', b:true, msg:'Benar. Satu PEB menekan tiga PEI sehingga NH₃ berbentuk piramida trigonal.'},
+      {imgPath:'./asset/img/game_tetrahedral.png', t:'Tetrahedral', b:false, msg:'Tetrahedral adalah susunan domainnya. Karena ada 1 PEB, bentuk molekulnya piramida trigonal.'},
+      {imgPath:'./asset/img/game_segitiga_planar.png', t:'Segitiga planar', b:false, msg:'Segitiga planar untuk 3 domain tanpa PEB, sedangkan NH₃ memiliki 4 domain.'},
+      {imgPath:'./asset/img/game_linear.png', t:'Linear', b:false, msg:'Linear untuk 2 domain tanpa PEB atau 5 domain dengan 3 PEB, bukan NH₃.'}
+    ] },
+
+  { t:'urut', sub:'Urutkan Langkah Menentukan Bentuk', ins:'Susun langkah menentukan bentuk molekul berikut dengan urutan yang benar!',
+    urut:['Tulis struktur Lewis dan tentukan atom pusat','Hitung jumlah PEI dan PEB pada atom pusat','Tentukan notasi AXE dan jumlah domain elektron','Tentukan susunan domain, lalu bentuk molekulnya'] },
+
+  { t:'kumpul', sub:'Kumpulkan Molekul Bentuk V', ins:'Ketuk hanya gambar molekul H₂O yang berbentuk V. Hindari gambar molekul lain!',
+    benar:'./asset/img/game_h2o.png',
+    salah:['./asset/img/game_co2.png','./asset/img/game_ch4.png'] },
+
+  { t:'sambung', sub:'Sambung Konsep VSEPR', ins:'Pilih lanjutan pernyataan yang paling tepat!',
+    hasil:'Pasangan elektron pada atom pusat saling tolak-menolak dan mengatur diri agar tolakannya sekecil mungkin, dengan tolakan terkuat berasal dari PEB.',
+    steps:[
+      { prev:'Pasangan elektron pada atom pusat saling ...', benar:'tolak-menolak', salah:['tarik-menarik','bergabung menjadi satu'] },
+      { prev:'Pasangan elektron mengatur posisi agar tolakan antarpasangan ...', benar:'sekecil mungkin', salah:['sebesar mungkin','tidak ada sama sekali'] },
+      { prev:'Tolakan paling kuat berasal dari pasangan elektron ...', benar:'bebas (PEB)', salah:['ikatan (PEI)','ikatan rangkap tiga'] }
+    ] },
+
+  { t:'jodoh', sub:'Jodohkan Molekul dengan Sudut Ikatan', ins:'Jodohkan molekul berikut dengan sudut ikatannya!',
+    pairs:[{n:1,teks:'CO₂ (linear)'},{n:2,teks:'BF₃ (segitiga planar)'},{n:3,teks:'CH₄ (tetrahedral)'}],
+    imgs:[{n:1,i:'./asset/img/game_sudut_180.png',name:'180°'},{n:2,i:'./asset/img/game_sudut_120.png',name:'120°'},{n:3,i:'./asset/img/game_sudut_1095.png',name:'109,5°'}] },
+
+  { t:'klik', sub:'Pilih Molekul Polar', ins:'Pilih SEMUA molekul yang bersifat polar! (jawaban benar lebih dari satu)',
+    opsi:[
+      {imgPath:'./asset/img/game_h2o.png', t:'H₂O', b:true, msg:'Benar. Bentuk V tidak simetris, sehingga momen dipol ikatan O–H tidak saling meniadakan.'},
+      {imgPath:'./asset/img/game_nh3.png', t:'NH₃', b:true, msg:'Benar. Bentuk piramida trigonal dengan 1 PEB membuat NH₃ bersifat polar.'},
+      {imgPath:'./asset/img/game_co2.png', t:'CO₂', b:false, msg:'CO₂ linear dan simetris, sehingga momen dipolnya saling meniadakan (nonpolar).'},
+      {imgPath:'./asset/img/game_ch4.png', t:'CH₄', b:false, msg:'CH₄ tetrahedral dan simetris, sehingga bersifat nonpolar.'}
+    ] },
+
+  { t:'urut', sub:'Urutkan Langkah Menentukan Kepolaran', ins:'Susun langkah menentukan kepolaran molekul berikut dengan urutan yang benar!',
+    urut:['Gambar struktur Lewis dan tentukan bentuk molekulnya','Tentukan kepolaran tiap ikatan dari selisih keelektronegatifan','Gambarkan arah momen dipol tiap ikatan sebagai vektor','Jumlahkan vektornya: habis berarti nonpolar, tersisa berarti polar'] },
+
+  { t:'kumpul', sub:'Kumpulkan Molekul Nonpolar CCl₄', ins:'Ketuk hanya gambar molekul CCl₄ yang nonpolar karena simetris. Hindari molekul yang polar!',
+    benar:'./asset/img/game_ccl4.png',
+    salah:['./asset/img/game_chcl3.png','./asset/img/game_nh3.png'] },
+
+  { t:'sambung', sub:'Sambung Bentuk dan Kepolaran', ins:'Lengkapi hubungan bentuk molekul dengan kepolarannya!',
+    hasil:'Molekul dengan ikatan polar yang tersusun simetris bersifat nonpolar, sedangkan susunan yang tidak simetris membuat molekul bersifat polar.',
+    steps:[
+      { prev:'Pada CO₂, dua ikatan C=O bersifat polar dan tersusun linear sehingga momen dipolnya ...', benar:'saling meniadakan', salah:['saling menjumlahkan','tidak ada karena ikatannya nonpolar'] },
+      { prev:'Karena momen dipolnya saling meniadakan, molekul CO₂ bersifat ...', benar:'nonpolar', salah:['polar','ionik'] },
+      { prev:'Pada H₂O yang berbentuk V, momen dipol dua ikatan O–H tidak saling meniadakan sehingga H₂O bersifat ...', benar:'polar', salah:['nonpolar','tidak memiliki momen dipol'] }
+    ] }
+];
+
+/* --- 4) BERLATIH — 10 soal, 5 ragam --- */
+const dtLatih = [
+  { t:'pg',
+    stimulus:'<b>Perhatikan:</b> Atom pusat N pada molekul NH₃ memiliki 3 pasangan elektron ikatan (PEI) dan 1 pasangan elektron bebas (PEB).',
+    soal:'Susunan domain elektron dan bentuk molekul NH₃ berturut-turut adalah ...',
+    opsi:['tetrahedral dan piramida trigonal','segitiga planar dan segitiga planar','tetrahedral dan tetrahedral','piramida trigonal dan tetrahedral','linear dan bentuk V'], j:0,
+    msg:'NH₃ bernotasi AX₃E (4 domain), sehingga susunan domainnya tetrahedral. Karena satu domain adalah PEB, bentuk molekulnya piramida trigonal.' },
+
+  { t:'bs', soal:'Sudut ikatan H–O–H pada H₂O lebih kecil daripada sudut H–C–H pada CH₄ karena H₂O memiliki dua PEB yang tolakannya lebih kuat.', j:true,
+    msg:'Pernyataan benar. Dua PEB pada H₂O menekan ikatan O–H sehingga sudutnya ±104,5°, lebih kecil daripada 109,5° pada CH₄ yang tidak memiliki PEB.' },
+
+  { t:'drag_word', soal:'Molekul CO₂ berbentuk <span class="blank-slot" data-id="1">___</span>, dan karena momen dipol ikatan C=O saling meniadakan, molekul CO₂ bersifat <span class="blank-slot" data-id="2">___</span>.', w:['linear','nonpolar','polar','bentuk V'], j:['linear','nonpolar'],
+    msg:'CO₂ (AX₂) berbentuk linear dengan sudut 180°. Dua vektor momen dipol yang sama besar dan berlawanan arah saling meniadakan, sehingga CO₂ nonpolar.' },
+
+  { t:'pg_kompleks',
+    soal:'Pilih semua pernyataan yang benar tentang teori VSEPR.',
+    opsi:['Pasangan elektron pada atom pusat saling tolak-menolak','Tolakan PEB–PEB lebih lemah daripada tolakan PEI–PEI','PEB menempati ruang lebih besar sehingga memperkecil sudut ikatan','Bentuk molekul ditentukan oleh jumlah domain elektron dan jumlah PEB pada atom pusat','Ikatan rangkap dua dihitung sebagai dua domain elektron'], j:[0,2,3],
+    msg:'Tolakan PEB–PEB justru yang terkuat, dan ikatan rangkap dihitung sebagai satu domain elektron.' },
+
+  { t:'jodoh', soal:'Jodohkan molekul dengan bentuk molekulnya!',
+    pairs:[{n:1,t:'BeCl₂ (AX₂)'},{n:2,t:'SO₂ (AX₂E)'},{n:3,t:'PCl₅ (AX₅)'}],
+    imgs:[{n:1,i:'./asset/img/latih_linear.png',name:'Linear'},{n:2,i:'./asset/img/latih_bentuk_v.png',name:'Bentuk V'},{n:3,i:'./asset/img/latih_bipiramida.png',name:'Bipiramida trigonal'}],
+    msg:'BeCl₂ memiliki 2 domain tanpa PEB sehingga linear. SO₂ memiliki 3 domain dengan 1 PEB sehingga berbentuk V. PCl₅ memiliki 5 domain tanpa PEB sehingga bipiramida trigonal.' },
+
+  { t:'pg',
+    stimulus:'<b>Perhatikan:</b> Ikatan C–Cl bersifat polar karena Cl lebih elektronegatif daripada C.',
+    soal:'Molekul berikut yang memiliki ikatan polar tetapi bersifat nonpolar adalah ...',
+    opsi:['H₂O','NH₃','CCl₄','CHCl₃','HCl'], j:2,
+    msg:'CCl₄ berbentuk tetrahedral simetris. Empat vektor momen dipol C–Cl saling meniadakan, sehingga molekulnya nonpolar. Pada CHCl₃, atom H membuat susunannya tidak simetris sehingga polar.' },
+
+  { t:'bs', soal:'Molekul yang mengandung ikatan polar pasti bersifat polar.', j:false,
+    msg:'Pernyataan salah. Kepolaran molekul bergantung pada bentuknya. CO₂, BF₃, dan CCl₄ memiliki ikatan polar, tetapi molekulnya nonpolar karena simetris.' },
+
+  { t:'pg_kompleks',
+    stimulus:'Perhatikan molekul-molekul berikut: BF₃, NH₃, SF₆, H₂O, dan CHCl₃.',
+    soal:'Pilih semua molekul yang bersifat polar.',
+    opsi:['BF₃','NH₃','SF₆','H₂O','CHCl₃'], j:[1,3,4],
+    msg:'NH₃ (piramida trigonal), H₂O (bentuk V), dan CHCl₃ (tetrahedral tidak simetris) bersifat polar. BF₃ (segitiga planar) dan SF₆ (oktahedral) simetris sehingga nonpolar.' },
+
+  { t:'drag_word', soal:'Atom pusat S pada SO₂ memiliki 2 PEI dan 1 PEB, sehingga bentuk molekulnya <span class="blank-slot" data-id="1">___</span> dan molekul bersifat <span class="blank-slot" data-id="2">___</span>.', w:['bentuk V','linear','polar','nonpolar'], j:['bentuk V','polar'],
+    msg:'SO₂ bernotasi AX₂E sehingga berbentuk V dengan sudut sedikit kurang dari 120°. Susunan tidak simetris membuat momen dipol tidak saling meniadakan, sehingga SO₂ polar.' },
+
+  { t:'jodoh', soal:'Jodohkan molekul dengan bentuk dan kepolarannya!',
+    pairs:[{n:1,t:'CH₄'},{n:2,t:'NH₃'},{n:3,t:'BF₃'}],
+    imgs:[{n:1,i:'./asset/img/latih_ch4.png',name:'Tetrahedral, nonpolar'},{n:2,i:'./asset/img/latih_nh3.png',name:'Piramida trigonal, polar'},{n:3,i:'./asset/img/latih_bf3.png',name:'Segitiga planar, nonpolar'}],
+    msg:'CH₄ (AX₄) dan BF₃ (AX₃) simetris sehingga nonpolar. NH₃ (AX₃E) memiliki 1 PEB, bentuknya tidak simetris, sehingga polar.' }
+];
+
+/* ##############################################################
+   #  BAGIAN B — MESIN APLIKASI (umumnya tidak perlu diubah)   #
+   ############################################################## */
+
+/* ---- Placeholder gambar otomatis bila aset belum tersedia ---- */
+function imgErr(el){
+  el.onerror=null;
+  const label=(el.alt||'gambar').replace(/[<>&]/g,'').slice(0,20);
+  const svg="<svg xmlns='http://www.w3.org/2000/svg' width='220' height='160'><rect width='100%' height='100%' rx='14' fill='#F1F5F9' stroke='#CBD5E1' stroke-width='3' stroke-dasharray='9'/><text x='50%' y='44%' font-size='44' text-anchor='middle'>🖼️</text><text x='50%' y='74%' font-size='15' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='#64748B'>"+label+"</text></svg>";
+  el.src="data:image/svg+xml;utf8,"+encodeURIComponent(svg);
+}
+/* ---- Terapkan CONFIG ke tampilan ---- */
+function setTxt(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+function setSrc(id,v){ const e=document.getElementById(id); if(e) e.setAttribute('src',v); }
+function applyConfig(){
+  const C=CONFIG;
+  setTxt('cfg-fase',C.fase); setTxt('cfg-judul',C.judul); setTxt('cfg-subjudul',C.subJudul);
+  setSrc('cfg-logo',C.logo); setSrc('cfg-bgjudul',C.bgJudul); setTxt('cfg-judul-menu',C.judul);
+  setTxt('cfg-mapel',C.mapel); setTxt('cfg-unit',C.unit); setTxt('cfg-subunit',C.subUnit); setTxt('cfg-tp',C.tp);
+  setTxt('cfg-nama',C.profil.nama); setTxt('cfg-nama2',C.profil.nama);
+  setTxt('cfg-instansi',C.profil.instansi); setTxt('cfg-surel',C.profil.surel); setTxt('cfg-tahun',C.profil.tahun);
+  setTxt('cfg-jenis',C.profil.jenis); setSrc('cfg-foto',C.profil.foto);
+  const isiList=(id,arr)=>{ const e=document.getElementById(id); if(e) e.innerHTML=arr.map(x=>`<li>${x}</li>`).join(''); };
+  isiList('cfg-ref-materi',C.referensi.materi); isiList('cfg-ref-aset',C.referensi.aset); isiList('cfg-ref-ai',C.referensi.ai);
+  document.title=C.judul+' — MPI';
+}
+
+/* ---- 1) SCALING PANGGUNG 16:9 ---- */
+const stage = document.getElementById('stage');
+function resizeStage(){
+  const w = window.innerWidth, h = window.innerHeight;
+  const scale = Math.min(w/1280, h/720);
+  stage.style.transform = 'scale(' + scale + ')';
+  stage.style.left = ((w - 1280*scale)/2) + 'px';
+  stage.style.top  = ((h - 720*scale)/2) + 'px';
+}
+window.addEventListener('resize', resizeStage); resizeStage();
+
+/* ---- 2) AUDIO ---- */
+let soundOn = true, globalVolume = 1;
+const AUDIO = {};
+function loadAudio(key, src){ try{ const a=new Audio(src); a.preload='auto'; AUDIO[key]=a; }catch(e){} }
+loadAudio('bgm','./asset/audio/bgm.mp3'); if(AUDIO['bgm']) AUDIO['bgm'].loop = true;
+loadAudio('klik','./asset/audio/sfx_klik.mp3');
+loadAudio('benar','./asset/audio/sfx_benar.mp3');
+loadAudio('salah','./asset/audio/sfx_salah.mp3');
+loadAudio('transisi','./asset/audio/sfx_transisi.mp3');
+loadAudio('bintang','./asset/audio/sfx_bintang.mp3');
+function play(key){
+  if(!soundOn || globalVolume === 0) return;
+  const a = AUDIO[key]; if(!a) return;
+  try{ a.volume = globalVolume; if(key !== 'bgm') a.currentTime=0; const p=a.play(); if(p&&p.catch) p.catch(()=>{}); } catch(e){}
+}
+function changeVolume(val){
+  globalVolume = parseFloat(val);
+  const btn = document.getElementById('sound-toggle');
+  if (globalVolume === 0){ soundOn=false; btn.textContent='🔇'; }
+  else { soundOn=true; btn.textContent = globalVolume<0.5?'🔉':'🔊'; if(AUDIO['bgm'] && AUDIO['bgm'].paused) play('bgm'); }
+  for(let k in AUDIO){ if(AUDIO[k]) AUDIO[k].volume = globalVolume; }
+}
+function toggleSound(){
+  const slider = document.getElementById('volume-slider'); const btn = document.getElementById('sound-toggle');
+  if(soundOn){ soundOn=false; slider.value=0; btn.textContent='🔇'; for(let k in AUDIO){ if(AUDIO[k]){ AUDIO[k].volume=0; if(k==='bgm') AUDIO[k].pause(); } } }
+  else { soundOn=true; globalVolume = globalVolume===0?1:globalVolume; slider.value=globalVolume; btn.textContent='🔊'; for(let k in AUDIO){ if(AUDIO[k]) AUDIO[k].volume=globalVolume; } play('bgm'); }
+}
+document.addEventListener('click', function(e){
+  const t = e.target.closest('[data-sfx]'); if(t && t.getAttribute('data-sfx') !== 'no') play('klik');
+});
+
+/* ---- EFEK VISUAL ---- */
+function triggerSalah(){ const el=document.getElementById('efek-salah'); if(el){ el.classList.add('nyala'); setTimeout(()=>el.classList.remove('nyala'),50);} }
+function showConfetti(){
+  const container=document.getElementById('stage');
+  const colors=['#E63946','#F4A261','#2ECC71','#E74C3C','#ffffff'];
+  for(let i=0;i<60;i++){
+    const conf=document.createElement('div'); conf.className='confetti';
+    conf.style.left='50%'; conf.style.top='50%';
+    conf.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
+    const angle=Math.random()*Math.PI*2, velocity=100+Math.random()*400;
+    conf.style.setProperty('--tx', (Math.cos(angle)*velocity)+'px');
+    conf.style.setProperty('--ty', (Math.sin(angle)*velocity-200)+'px');
+    if(Math.random()>0.5) conf.style.borderRadius='50%';
+    container.appendChild(conf); setTimeout(()=>conf.remove(),1500);
+  }
+}
+
+/* ---- IDENTITAS ---- */
+let infoMurid = { nama:"Murid Hebat", sekolah:"-" };
+function simpanIdentitas(){
+  const nm=document.getElementById('in-nama').value.trim();
+  const sk=document.getElementById('in-sekolah').value.trim();
+  const pesan=document.getElementById('login-pesan');
+  if(!nm){ pesan.style.display='block'; return; }
+  infoMurid.nama=nm; infoMurid.sekolah=sk||"-";
+  closeModal('modal-login'); play('bgm'); goMenu();
+}
+
+/* ---- UTIL ---- */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function getOffset(el, parent){ let top=0,left=0; while(el&&el!==parent){ top+=el.offsetTop; left+=el.offsetLeft; el=el.offsetParent; } return {top,left}; }
+function drawLine(el1, el2, containerId){
+  const wrap=document.getElementById(containerId);
+  if(!wrap) return;
+  let svg=wrap.querySelector('.jodoh-svg');
+  if(!svg){
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('class','jodoh-svg');
+    svg.style.position='absolute'; svg.style.top='0'; svg.style.left='0'; svg.style.width='100%'; svg.style.height='100%'; svg.style.pointerEvents='none'; svg.style.zIndex='0';
+    wrap.appendChild(svg);
+  }
+  const o1=getOffset(el1,wrap), o2=getOffset(el2,wrap);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', o1.left+el1.offsetWidth); line.setAttribute('y1', o1.top+el1.offsetHeight/2);
+  line.setAttribute('x2', o2.left); line.setAttribute('y2', o2.top+el2.offsetHeight/2);
+  line.setAttribute('stroke','#27AE60'); line.setAttribute('stroke-width','5'); line.setAttribute('stroke-linecap','round'); line.setAttribute('class','jodoh-line');
+  svg.appendChild(line);
+}
+function setProgress(fillId, labelId, cur, total){ document.getElementById(fillId).style.width=(cur/total*100)+'%'; document.getElementById(labelId).textContent=cur+'/'+total; }
+function showFb(id,kind,msg){ const fb=document.getElementById(id); if(!fb) return; fb.className='feedback show '+kind; fb.innerHTML=msg; }
+
+/* ---- ROUTER ---- */
+function showScreen(id){
+  clearKumpul();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const aw=document.getElementById('audio-widget'); if(aw) aw.style.display=(id==='scr-judul')?'none':'flex';
+  if(id!=='scr-judul') play('transisi'); resizeStage();
+}
+function goJudul(){ showScreen('scr-judul'); }
+function goMenu(){ showScreen('scr-menu'); }
+
+/* ============================================================
+   BELAJAR — satu frame: gambar kiri, teks kanan
+   ============================================================ */
+const belajar = { step:0 };
+function startBelajar(){ belajar.step=0; showScreen('scr-belajar'); renderBelajar(); }
+function renderBelajar(){
+  const total=MATERI.length;
+  setProgress('belajar-pfill','belajar-plabel', belajar.step+1, total);
+  const m=MATERI[belajar.step];
+  document.getElementById('belajar-sub').textContent=m.judul;
+  document.getElementById('belajar-prev').textContent = belajar.step===0 ? "☰ Menu" : "◀ Sebelumnya";
+  document.getElementById('belajar-next').textContent = belajar.step===total-1 ? "Selesai ✔" : "Selanjutnya ▶";
+  let kuisHTML='';
+  if(m.kuis){
+    kuisHTML=`<div class="belajar-kuis">
+      <p class="bk-tanya">✨ Coba Jawab! &nbsp; ${m.kuis.tanya}</p>
+      <div class="bk-opsi">
+        <button class="btn btn-kuning" style="padding:10px 20px;font-size:18px;" onclick="cekKuisMini(this, ${m.kuis.j===0})">${m.kuis.o[0]}</button>
+        <button class="btn btn-kuning" style="padding:10px 20px;font-size:18px;" onclick="cekKuisMini(this, ${m.kuis.j===1})">${m.kuis.o[1]}</button>
+      </div></div>`;
+  }
+  document.getElementById('belajar-content').innerHTML = `
+    <div class="belajar-frame">
+      <div class="belajar-img-sisi"><img src="${m.img}" alt="${m.judul}" onerror="imgErr(this)"></div>
+      <div class="belajar-teks-sisi">
+        <h2>${m.judul}</h2>
+        <div class="belajar-intro">${m.intro}</div>
+        <div class="belajar-isi">${m.isi}</div>
+        ${kuisHTML}
+      </div>
+    </div>`;
+}
+function cekKuisMini(btn, isBenar){
+  play('klik'); btn.parentNode.querySelectorAll('button').forEach(b=>b.disabled=true);
+  if(isBenar){ btn.style.background='var(--hijau-tua)'; btn.style.color='#fff'; btn.innerHTML+=' ✔️'; play('benar'); showConfetti(); }
+  else { btn.style.background='var(--salah)'; btn.style.color='#fff'; btn.innerHTML+=' ❌'; play('salah'); triggerSalah(); }
+}
+function belajarNext(){ if(belajar.step < MATERI.length-1){ belajar.step++; renderBelajar(); } else goMenu(); }
+function belajarPrev(){ if(belajar.step > 0){ belajar.step--; renderBelajar(); } else goMenu(); }
+
+/* ============================================================
+   BERMAIN — 10 permainan (jodoh / klik / urut / kumpul / sambung)
+   ============================================================ */
+let skorBermain=0, main={step:0}, activeGame=null;
+function tambahSkor(val){ skorBermain=Math.max(0,skorBermain+val); document.getElementById('skor-bermain-angka').textContent=skorBermain; }
+function startBermain(){ main.step=0; skorBermain=0; tambahSkor(0); showScreen('scr-bermain'); renderBermain(); }
+function bermainNext(){ if(main.step<dataBermain.length-1){ main.step++; renderBermain(); } else { clearKumpul(); renderSkorBermain(); } }
+function bermainPrev(){
+  clearKumpul();
+  document.querySelector('#scr-bermain .nav-back').textContent="◀ Sebelumnya";
+  document.getElementById('bermain-next').textContent="Selanjutnya ▶";
+  if(main.step>0){ main.step--; renderBermain(); } else goMenu();
+}
+function renderBermain(){
+  clearKumpul();
+  setProgress('bermain-pfill','bermain-plabel', main.step+1, dataBermain.length);
+  document.getElementById('bermain-next').disabled=true;
+  const game=dataBermain[main.step];
+  document.getElementById('bermain-sub').textContent='Permainan '+(main.step+1)+': '+game.sub;
+  if(game.t==='jodoh') initJodoh(game);
+  else if(game.t==='klik') initKlik(game);
+  else if(game.t==='urut') initUrut(game);
+  else if(game.t==='kumpul') initKumpul(game);
+  else if(game.t==='sambung') initSambung(game);
+}
+/* ---- JODOH ---- */
+function initJodoh(game){
+  activeGame={ s:null, c:0, total:game.pairs.length };
+  let kHTML='', rHTML='';
+  game.pairs.forEach(p=>{ kHTML+=`<div class="pair-item" data-side="kiri" data-n="${p.n}" onclick="handleJodoh(this)">${p.teks}</div>`; });
+  shuffle(game.imgs).forEach(p=>{ rHTML+=`<div class="pair-item" data-side="kanan" data-n="${p.n}" onclick="handleJodoh(this)"><img src="${p.i}" class="img-pair" alt="${p.name}" onerror="imgErr(this)"><span>${p.name}</span></div>`; });
+  document.getElementById('bermain-content').innerHTML=`<div class="center-col" style="z-index:10;"><p class="akt-instruksi">${game.ins}</p><div class="jodoh-wrap" id="jw-main"><div class="jodoh-kol">${kHTML}</div><div class="jodoh-kol">${rHTML}</div></div><div class="feedback" id="play-fb"></div></div>`;
+}
+function handleJodoh(el){
+  if(el.classList.contains('locked')) return;
+  if(el.dataset.side==='kiri'){ document.querySelectorAll('#bermain-content [data-side="kiri"]').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); activeGame.s=el; play('klik'); return; }
+  if(!activeGame.s){ showFb('play-fb','no','❌ Pilih kotak di sebelah kiri dahulu.'); return; }
+  if(el.dataset.n===activeGame.s.dataset.n){
+    play('benar'); tambahSkor(10); showConfetti();
+    el.classList.add('locked'); activeGame.s.classList.add('locked'); drawLine(activeGame.s,el,'jw-main');
+    activeGame.s.classList.remove('sel'); activeGame.s=null; activeGame.c++;
+    showFb('play-fb','ok','✅ <b>Cocok! (+10 poin)</b>');
+    if(activeGame.c===activeGame.total){ document.getElementById('bermain-next').disabled=false; showFb('play-fb','ok','🎉 <b>Hebat! Semua berhasil dicocokkan.</b>'); }
+  } else {
+    play('salah'); tambahSkor(-5); triggerSalah(); el.classList.add('salah'); setTimeout(()=>el.classList.remove('salah'),400);
+    showFb('play-fb','no','❌ <b>Belum tepat (-5 poin).</b>');
+  }
+}
+/* ---- KLIK ---- */
+function initKlik(game){
+  const opsi=shuffle(game.opsi);
+  activeGame={ c:0, total:game.opsi.filter(o=>o.b).length };
+  let html='';
+  opsi.forEach((o,i)=> html+=`<div class="obj-card" id="oc-${i}"><img src="${o.imgPath}" class="img-obj" alt="${o.t}" onerror="imgErr(this)"><span>${o.t}</span></div>`);
+  document.getElementById('bermain-content').innerHTML=`<div class="center-col"><p class="akt-instruksi">${game.ins}</p><div class="scene-grid">${html}</div><div class="feedback" id="play-fb"></div></div>`;
+  opsi.forEach((o,i)=>{ const el=document.getElementById('oc-'+i); el.onclick=()=>handleKlik(el,o.b,o.msg); });
+}
+function handleKlik(el,isBenar,msg){
+  if(el.classList.contains('benar')||el.classList.contains('salah')) return;
+  if(isBenar){
+    play('benar'); tambahSkor(20); showConfetti(); el.classList.add('benar'); activeGame.c++;
+    showFb('play-fb','ok',`✅ <b>Tepat! (+20 poin)</b><br>${msg}`);
+    if(activeGame.c===activeGame.total) document.getElementById('bermain-next').disabled=false;
+  } else {
+    play('salah'); tambahSkor(-5); el.classList.add('salah'); triggerSalah();
+    showFb('play-fb','no',`❌ <b>Kurang tepat (-5 poin).</b><br>${msg}`);
+    setTimeout(()=>el.classList.remove('salah'),500);
+  }
+}
+/* ---- URUT ---- */
+function initUrut(game){ activeGame={g:game}; do{ activeGame.now=shuffle(game.urut); }while(activeGame.now.join('|')===game.urut.join('|')); drawUrutUI(); }
+function drawUrutUI(){
+  let items='';
+  activeGame.now.forEach((t,i)=>{
+    items+=`<div class="urut-item"><span class="num">${i+1}</span><span>${t}</span>
+      <button class="btn btn-kuning" onclick="moveUrut(${i},-1)" ${i===0?'disabled':''}>▲</button>
+      <button class="btn btn-kuning" onclick="moveUrut(${i},1)" ${i===activeGame.now.length-1?'disabled':''}>▼</button></div>`;
+  });
+  document.getElementById('bermain-content').innerHTML=`<div class="center-col" style="justify-content:flex-start; overflow-y:auto;"><p class="akt-instruksi" style="margin-bottom:10px;">${activeGame.g.ins}</p><div style="width:100%;">${items}</div><button class="btn btn-biru" style="height:60px;margin-top:10px;font-size:22px" onclick="checkUrut()">Periksa Urutan</button><div class="feedback" id="play-fb"></div></div>`;
+}
+function moveUrut(i,dir){ play('klik'); const j=i+dir; if(j<0||j>=activeGame.now.length) return; [activeGame.now[i],activeGame.now[j]]=[activeGame.now[j],activeGame.now[i]]; drawUrutUI(); }
+function checkUrut(){
+  if(activeGame.now.join('|')===activeGame.g.urut.join('|')){ play('benar'); tambahSkor(20); showConfetti(); showFb('play-fb','ok','✅ <b>Urutan tepat! (+20 poin)</b>'); document.getElementById('bermain-next').disabled=false; }
+  else { play('salah'); tambahSkor(-5); triggerSalah(); showFb('play-fb','no','❌ <b>Belum tepat (-5 poin).</b> Coba lagi!'); }
+}
+/* ---- KUMPUL (ketuk berwaktu) ---- */
+let kumpulTimer=null, kumpulSpawn=null, kumpulCollected=0, kumpulTime=0, activeKumpul={benar:'',salah:[]};
+function clearKumpul(){ if(kumpulTimer){clearInterval(kumpulTimer);kumpulTimer=null;} if(kumpulSpawn){clearInterval(kumpulSpawn);kumpulSpawn=null;} }
+function initKumpul(game){
+  clearKumpul(); kumpulCollected=0; kumpulTime=30; activeKumpul={ benar:game.benar, salah:game.salah||[] };
+  document.getElementById('bermain-content').innerHTML=`
+    <div class="center-col" style="justify-content:flex-start;">
+      <p class="akt-instruksi">${game.ins}</p>
+      <div class="kumpul-hud"><div class="hud-box hud-time">⏱️ <span id="kumpul-time">30</span> dtk</div><div class="hud-box hud-coll">⭐ Terkumpul: <span id="kumpul-coll">0</span></div></div>
+      <div class="kumpul-area" id="kumpul-area"></div>
+      <div class="feedback" id="play-fb"></div>
+    </div>`;
+  kumpulTimer=setInterval(()=>{ kumpulTime--; const t=document.getElementById('kumpul-time'); if(t)t.textContent=kumpulTime; if(kumpulTime<=0) endKumpul(); },1000);
+  kumpulSpawn=setInterval(spawnFlag,650); spawnFlag(); spawnFlag(); spawnFlag();
+}
+function spawnFlag(){
+  const area=document.getElementById('kumpul-area'); if(!area) return;
+  const benar=Math.random()<0.6;
+  const f=document.createElement('div'); f.className='kumpul-flag';
+  const img= benar ? activeKumpul.benar : (activeKumpul.salah.length? activeKumpul.salah[Math.floor(Math.random()*activeKumpul.salah.length)] : activeKumpul.benar);
+  f.innerHTML=`<img src="${img}" alt="objek" onerror="imgErr(this)">`;
+  const maxX=Math.max(0,area.clientWidth-100), maxY=Math.max(0,area.clientHeight-110);
+  f.style.left=(Math.random()*maxX)+'px'; f.style.top=(Math.random()*maxY)+'px';
+  f.onclick=()=>tapFlag(f,benar); area.appendChild(f);
+  setTimeout(()=>{ if(f.parentNode) f.remove(); },1700);
+}
+function tapFlag(f,benar){
+  if(!f.parentNode) return;
+  if(benar){ play('benar'); kumpulCollected++; tambahSkor(5); const c=document.getElementById('kumpul-coll'); if(c)c.textContent=kumpulCollected; f.remove(); }
+  else { play('salah'); tambahSkor(-3); triggerSalah(); f.style.filter='grayscale(1) brightness(0.7)'; setTimeout(()=>{ if(f.parentNode) f.remove(); },200); }
+}
+function endKumpul(){
+  clearKumpul();
+  const area=document.getElementById('kumpul-area');
+  if(area) area.innerHTML=`<div style="display:flex;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:10px;"><div style="font-size:64px;">🎉</div><div style="font-size:30px;font-weight:900;color:var(--primary-tua);">Waktu Habis!</div></div>`;
+  showConfetti(); play('bintang');
+  showFb('play-fb','ok',`⭐ <b>Kamu mengumpulkan ${kumpulCollected} objek benar!</b> Tekan Selanjutnya ▶`);
+  document.getElementById('bermain-next').disabled=false;
+}
+/* ---- SAMBUNG ---- */
+let sambungStep=0, activeSambung=null;
+function initSambung(game){ sambungStep=0; activeSambung=game; drawSambung(); }
+function drawSambung(){
+  const g=activeSambung;
+  if(sambungStep>=g.steps.length){
+    document.getElementById('bermain-content').innerHTML=`<div class="center-col"><div class="akhir" style="flex:none;"><div style="font-size:60px;">🎯</div><h2 style="font-size:34px;">Lengkap!</h2><div class="sambung-lirik" style="font-size:22px;margin-top:10px;">${g.hasil}</div><p style="font-size:20px;margin-top:14px;">Hebat! Tekan <b>Selanjutnya ▶</b></p></div></div>`;
+    return;
+  }
+  const s=g.steps[sambungStep];
+  let btns=''; shuffle([s.benar,...s.salah]).forEach(o=> btns+=`<button class="sambung-btn" onclick="cekSambung(this, ${o===s.benar})">${o}</button>`);
+  document.getElementById('bermain-content').innerHTML=`<div class="center-col"><p class="akt-instruksi">${g.ins} (${sambungStep+1}/${g.steps.length})</p><div class="sambung-lirik">${s.prev}</div><div class="sambung-opsi">${btns}</div><div class="feedback" id="play-fb"></div></div>`;
+}
+function cekSambung(btn,benar){
+  document.querySelectorAll('.sambung-btn').forEach(b=>b.style.pointerEvents='none');
+  if(benar){
+    btn.classList.add('benar'); play('benar'); tambahSkor(10); showConfetti(); showFb('play-fb','ok','✅ <b>Tepat! (+10 poin)</b>');
+    sambungStep++;
+    setTimeout(()=>{ if(sambungStep>=activeSambung.steps.length) document.getElementById('bermain-next').disabled=false; drawSambung(); },900);
+  } else {
+    btn.classList.add('salah'); play('salah'); tambahSkor(-5); triggerSalah(); showFb('play-fb','no','❌ <b>Belum tepat (-5 poin).</b> Coba lagi!');
+    setTimeout(()=> document.querySelectorAll('.sambung-btn').forEach(b=>{ b.style.pointerEvents='auto'; b.classList.remove('salah'); }),800);
+  }
+}
+function renderSkorBermain(){
+  document.getElementById('bermain-sub').textContent='Selesai';
+  document.getElementById('bermain-next').disabled=true; play('bintang');
+  document.getElementById('bermain-content').innerHTML=`
+    <div class="akhir"><h2>🏆 Permainan Selesai!</h2>
+      <div class="identitas">${infoMurid.nama} • ${infoMurid.sekolah}</div>
+      <p style="font-size:24px;margin-top:20px;">Total Skor Bermain Kamu:</p>
+      <p class="skor-angka">${skorBermain}</p>
+      <div style="display:flex;gap:20px;margin-top:20px">
+        <button class="btn btn-biru" style="height:60px;padding:0 30px;font-size:20px" onclick="startBermain()">🔄 Main Lagi</button>
+        <button class="btn btn-merah" style="height:60px;padding:0 30px;font-size:20px" onclick="goMenu()">☰ Menu Utama</button>
+      </div></div>`;
+}
+
+/* ============================================================
+   BERLATIH — 10 soal (pg / bs / drag_word / pg_kompleks / jodoh)
+   ============================================================ */
+let latih={ step:0, skor:0, state:[] };
+function startBerlatih(){ latih={step:0,skor:0,state:[]}; dtLatih.forEach((_,i)=>latih.state[i]={done:false,attempted:false}); showScreen('scr-berlatih'); renderBerlatih(); }
+function berlatihNext(){ if(latih.step<dtLatih.length){ latih.step++; renderBerlatih(); } }
+function berlatihPrev(){
+  document.querySelector('#scr-berlatih .nav-back').textContent="◀ Sebelumnya";
+  document.getElementById('berlatih-next').textContent="Selanjutnya ▶";
+  if(latih.step>0){ latih.step--; renderBerlatih(); } else goMenu();
+}
+function lockLatih(){ document.querySelectorAll('.opsi, .bs-btn, .opsi-kompleks, .word-btn, .pair-item, #btn-cek').forEach(el=>el.style.pointerEvents='none'); }
+function restoreFeedback(q){ if(latih.state[latih.step].done){ setTimeout(()=>{ showFb('bl-fb','ok',`✅ <b>Sudah dijawab benar!</b><br>${q.msg||''}`); lockLatih(); },50); } }
+function renderBerlatih(){
+  if(latih.step>=dtLatih.length){ renderSkorLatih(); return; }
+  setProgress('berlatih-pfill','berlatih-plabel', latih.step+1, dtLatih.length);
+  document.getElementById('berlatih-next').disabled=!latih.state[latih.step].done;
+  const q=dtLatih[latih.step], c=document.getElementById('berlatih-content');
+  if(q.t==='pg') r_PG(c,q);
+  else if(q.t==='bs') r_BS(c,q);
+  else if(q.t==='pg_kompleks') r_PG_Komp(c,q);
+  else if(q.t==='drag_word') r_Drag(c,q);
+  else if(q.t==='jodoh') r_JodohLatih(c,q);
+  restoreFeedback(q);
+}
+function ulangiLatih(){ play('klik'); renderBerlatih(); }
+function evLatih(benar){
+  const q=dtLatih[latih.step], st=latih.state[latih.step];
+  if(benar){ st.done=true; if(!st.attempted) latih.skor++; play('benar'); showConfetti(); showFb('bl-fb','ok',`✅ <b>Benar!</b><br>${q.msg||''}`); document.getElementById('berlatih-next').disabled=false; lockLatih(); }
+  else { st.attempted=true; play('salah'); triggerSalah(); showFb('bl-fb','no',`❌ <b>Kurang tepat.</b><br>${q.msg||''}<div style="margin-top:14px;"><button class="btn btn-kuning" style="height:48px;padding:0 30px;font-size:18px" onclick="ulangiLatih()">🔄 Coba Lagi</button></div>`); lockLatih(); }
+}
+/* Sisi kiri (pertanyaan + gambar/stimulus opsional) untuk tata letak dua sisi */
+function soalKiri(q){
+  const gbr  = q.img      ? `<img src="${q.img}" class="soal-img" alt="Ilustrasi soal" onerror="imgErr(this)">` : '';
+  const stim = q.stimulus ? `<div class="soal-stimulus">${q.stimulus}</div>` : '';
+  return `<div class="soal-kiri"><div class="soal-label">Pertanyaan</div>${stim}<div class="soal-teks">${q.soal}</div>${gbr}</div>`;
+}
+function r_PG(c,q){
+  let opsi='';
+  q.opsi.forEach((o,i)=> opsi+=`<div class="opsi ${latih.state[latih.step].done && i===q.j ? 'benar':''}" onclick="if(!latih.state[latih.step].done){ play('klik'); this.classList.add(${i===q.j}?'benar':'salah'); evLatih(${i===q.j}); }"><span class="bul">${String.fromCharCode(65+i)}</span>${o}</div>`);
+  c.innerHTML=`<div class="soal-split">${soalKiri(q)}<div class="opsi-kanan"><div class="opsi-list">${opsi}</div><div class="feedback" id="bl-fb"></div></div></div>`;
+}
+function r_BS(c,q){
+  c.innerHTML=`<div class="center-col"><div class="soal">${q.soal}</div><div class="bs-grid"><button class="bs-btn bs-benar" onclick="if(!latih.state[latih.step].done){ play('klik'); evLatih(${true===q.j}); }">✔ BENAR</button><button class="bs-btn bs-salah" onclick="if(!latih.state[latih.step].done){ play('klik'); evLatih(${false===q.j}); }">✘ SALAH</button></div><div class="feedback" id="bl-fb"></div></div>`;
+}
+function r_PG_Komp(c,q){
+  latih.temp=[]; let opsi='';
+  q.opsi.forEach((o,i)=> opsi+=`<div class="opsi opsi-kompleks" id="pk-${i}" onclick="toggleKomp(${i})"><span class="bul">${String.fromCharCode(65+i)}</span>${o}</div>`);
+  c.innerHTML=`<div class="soal-split">${soalKiri(q)}<div class="opsi-kanan"><div class="opsi-list">${opsi}</div><button class="btn btn-biru" id="btn-cek" style="height:50px;margin-top:4px;font-size:19px" onclick="cekKomp()">Periksa Jawaban</button><div class="feedback" id="bl-fb"></div></div></div>`;
+}
+function toggleKomp(i){ if(latih.state[latih.step].done) return; const el=document.getElementById(`pk-${i}`); play('klik'); el.classList.toggle('terpilih'); const idx=latih.temp.indexOf(i); if(idx>-1) latih.temp.splice(idx,1); else latih.temp.push(i); }
+function cekKomp(){
+  const q=dtLatih[latih.step];
+  const benar=latih.temp.length===q.j.length && latih.temp.every(v=>q.j.includes(v));
+  if(benar){ document.querySelectorAll('.opsi-kompleks').forEach((el,i)=>{ if(q.j.includes(i)) el.classList.add('benar'); }); }
+  evLatih(benar);
+}
+function r_Drag(c,q){
+  let words=''; q.w.forEach((w,i)=> words+=`<button class="word-btn" id="wb-${i}" onclick="tapWord(this, '${w.replace(/'/g,"\\'")}')">${w}</button>`);
+  c.innerHTML=`<div class="center-col"><div class="kalimat-drag" id="k-drag">${q.soal}</div><div class="word-pool">${words}</div><button class="btn btn-biru" id="btn-cek" style="height:56px;margin-top:20px;font-size:20px" onclick="cekDrag()">Periksa</button><div class="feedback" id="bl-fb"></div></div>`;
+  setTimeout(()=> document.querySelectorAll('#k-drag .blank-slot').forEach(b=>b.addEventListener('click',()=>tapBlank(b))),50);
+}
+function tapWord(btn,w){
+  if(latih.state[latih.step].done) return;
+  const blanks=Array.from(document.querySelectorAll('#k-drag .blank-slot'));
+  const target=blanks.find(b=>!b.classList.contains('terisi'));
+  if(target){ play('klik'); target.textContent=w; target.classList.add('terisi'); btn.classList.add('dipakai'); target.dataset.wb=btn.id; }
+}
+function tapBlank(blank){
+  if(latih.state[latih.step].done || !blank.classList.contains('terisi')) return;
+  play('klik'); const btn=document.getElementById(blank.dataset.wb); if(btn) btn.classList.remove('dipakai');
+  blank.textContent='___'; blank.classList.remove('terisi'); delete blank.dataset.wb;
+}
+function cekDrag(){
+  const q=dtLatih[latih.step];
+  const ans=Array.from(document.querySelectorAll('#k-drag .blank-slot')).map(b=>b.textContent.trim());
+  evLatih(ans.join('|')===q.j.join('|'));
+}
+function r_JodohLatih(c,q){
+  activeGame={ s:null, c:0, t:q.pairs.length };
+  let k='', r='';
+  shuffle(q.pairs).forEach(p=>{ k+=`<div class="pair-item" data-side="kiri" data-n="${p.n}" onclick="latJodohLatih(this)"><span>${p.t}</span></div>`; });
+  shuffle(q.imgs).forEach(p=>{ r+=`<div class="pair-item" data-side="kanan" data-n="${p.n}" onclick="latJodohLatih(this)"><img src="${p.i}" class="img-pair" alt="${p.name}" onerror="imgErr(this)"><span>${p.name}</span></div>`; });
+  c.innerHTML=`<div class="center-col" style="z-index:10;"><div class="soal">${q.soal}</div><div class="jodoh-wrap" id="jw-latih"><div class="jodoh-kol">${k}</div><div class="jodoh-kol">${r}</div></div><div class="feedback" id="bl-fb"></div></div>`;
+}
+function latJodohLatih(el){
+  if(latih.state[latih.step].done || el.classList.contains('locked')) return;
+  if(el.dataset.side==='kiri'){ document.querySelectorAll('#berlatih-content [data-side="kiri"]').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); activeGame.s=el; play('klik'); return; }
+  if(!activeGame.s) return;
+  if(el.dataset.n===activeGame.s.dataset.n){
+    play('klik'); el.classList.add('locked'); activeGame.s.classList.add('locked','benar'); drawLine(activeGame.s,el,'jw-latih');
+    activeGame.s.classList.remove('sel'); activeGame.s=null; activeGame.c++;
+    if(activeGame.c===activeGame.t) evLatih(true);
+  } else { evLatih(false); }
+}
+function renderSkorLatih(){
+  document.getElementById('berlatih-sub').textContent='Selesai';
+  document.getElementById('berlatih-next').disabled=true;
+  const total=dtLatih.length, persen=Math.round(latih.skor/total*100);
+  let pesan = persen>=80?'🎉 <b>Luar biasa! Pemahaman kalian sudah sangat baik.</b>' : persen>=50?'Bagus! Ibu sarankan pelajari lagi bagian yang belum tepat.' : 'Tetap semangat! Pelajari kembali materi Belajar, lalu kerjakan latihan sekali lagi.';
+  play('bintang');
+  document.getElementById('berlatih-content').innerHTML=`
+    <div class="akhir"><h2>Bagus, Anak-anak!</h2>
+      <div class="identitas">${infoMurid.nama} • ${infoMurid.sekolah}</div>
+      <p style="font-size:24px;margin-top:20px;">Jawaban benarmu:</p>
+      <p class="skor-angka">${latih.skor} <span style="font-size:40px;color:var(--tinta)">dari ${total}</span></p>
+      <p style="font-size:26px;font-weight:800;color:var(--primary);margin:0 0 10px;">Skor Akhir: ${persen}</p>
+      <p style="font-size:20px;margin-bottom:10px;">${pesan}</p>
+      <div style="display:flex;gap:20px;margin-top:10px">
+        <button class="btn btn-biru" style="height:60px;padding:0 30px;font-size:20px" onclick="startBerlatih()">🔄 Ulangi Ujian</button>
+        <button class="btn btn-merah" style="height:60px;padding:0 30px;font-size:20px" onclick="goMenu()">☰ Menu Utama</button>
+      </div></div>`;
+}
+
+/* ---- MODAL ---- */
+function openModal(id){ document.getElementById(id).classList.add('show'); play('transisi'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); play('klik'); }
+document.querySelectorAll('.modal-bg').forEach(m=>{ m.addEventListener('click', e=>{ if(e.target===m) closeModal(m.id); }); });
+
+/* ---- INISIALISASI ---- */
+applyConfig();
+</script>
+</body>
+</html>
