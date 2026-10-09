@@ -33,7 +33,9 @@ const CONFIG = {
     ]
   }
 };
-
+<audio controls autoplay muted>
+  <source src="asset/audio/musik.mp3" type="audio/mpeg">
+</audio>
 /* --- 2) BELAJAR — gambar kiri, penjelasan kanan (1 frame) --- */
 const MATERI = [
   { judul:"1. Mengapa Bentuk Molekul Penting?", img:"./asset/img/materi_1.png",
@@ -47,7 +49,7 @@ const MATERI = [
     kuis:{ tanya:"Tolakan yang paling kuat terjadi antara ...", o:["PEI dan PEI","PEB dan PEB"], j:1 } },
 
   { judul:"3. Domain Elektron dan Notasi AXE", img:"./asset/img/materi_3.png",
-    intro:"Supaya lebih mudah, Ibu kenalkan 'kode' untuk memetakan atom pusat, namanya notasi AXE.",
+    intro:"Supaya lebih mudah, Bapak kenalkan 'kode' untuk memetakan atom pusat, namanya notasi AXE.",
     isi:"<p>Satu <b>domain elektron</b> adalah satu daerah tempat elektron berada di sekitar atom pusat, yaitu satu ikatan (tunggal, rangkap, atau rangkap tiga) atau satu PEB.</p><p style='font-size:25px;text-align:center;'><b>AX<sub>n</sub>E<sub>m</sub></b></p><ul><li><b>A</b> = atom pusat, <b>X</b> = atom terikat (n buah), <b>E</b> = PEB (m buah).</li><li>Ikatan rangkap dihitung sebagai <b>satu domain</b>.</li><li>Contoh: CH₄ → AX₄, NH₃ → AX₃E, H₂O → AX₂E₂.</li></ul>",
     kuis:{ tanya:"Notasi AXE untuk molekul NH₃ adalah ...", o:["AX₃E","AX₂E₂"], j:0 } },
 
@@ -57,7 +59,7 @@ const MATERI = [
     kuis:{ tanya:"Molekul BF₃ (AX₃) berbentuk ...", o:["segitiga planar","linear"], j:0 } },
 
   { judul:"5. Empat Domain Elektron", img:"./asset/img/materi_5.png",
-    intro:"Ini bagian yang Ibu suka, karena pengaruh PEB terlihat jelas pada tiga molekul yang sangat kita kenal.",
+    intro:"Ini bagian yang Bapak suka, karena pengaruh PEB terlihat jelas pada tiga molekul yang sangat kita kenal.",
     isi:"<p>Ketiga molekul ini punya susunan domain yang sama, yaitu <b>tetrahedral</b>, tetapi bentuk molekulnya berbeda karena jumlah PEB.</p><ul><li><b>AX₄</b>: <b>tetrahedral</b>, 109,5°. Contoh: CH₄.</li><li><b>AX₃E</b>: <b>piramida trigonal</b>, ±107°. Contoh: NH₃.</li><li><b>AX₂E₂</b>: <b>bentuk V</b>, ±104,5°. Contoh: H₂O.</li></ul><p>Semakin banyak PEB, semakin kecil sudut ikatannya.</p>",
     kuis:{ tanya:"Molekul H₂O (AX₂E₂) berbentuk ...", o:["linear","bentuk V"], j:1 } },
 
