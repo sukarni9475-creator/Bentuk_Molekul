@@ -1,0 +1,18 @@
+:root {
+    --primary: #7B3FA0;
+    --primary-tua: #4A2370;
+    --accent: #F57C00;
+    --accent-tua: #C25E00;
+    --tinta: #2B1A3D;
+    --krem: #FFFFFF;
+    --krem-2: #FBF5FD;
+    --garis: #E6D3F0;
+    --hijau: #43A047;
+    --hijau-tua: #2E7D32;
+    --salah: #D32F2F;
+    --biru-muda: #FDE8F3;
+    --pink: #EC4899;
+    --pink-tua: #BE185D;
+    --bayang: 0 16px 32px rgba(74, 35, 112, 0.18);
+    --bayang-kecil: 0 8px 20px rgba(74, 35, 112, 0.12);
+  }
