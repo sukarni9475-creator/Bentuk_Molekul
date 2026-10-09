@@ -36,6 +36,14 @@ const CONFIG = {
 <audio controls autoplay muted>
   <source src="asset/audio/musik.mp3" type="audio/mpeg">
 </audio>
+// Mengambil elemen dari index.html
+const btnMulai = document.getElementById('btnMulai'); // Sesuaikan ID tombol
+const bgMusic = document.getElementById('bgMusic');
+
+// Memutar audio saat tombol MULAI diklik
+btnMulai.addEventListener('click', function() {
+  bgMusic.play();
+});
 /* --- 2) BELAJAR — gambar kiri, penjelasan kanan (1 frame) --- */
 const MATERI = [
   { judul:"1. Mengapa Bentuk Molekul Penting?", img:"./asset/img/materi_1.png",
