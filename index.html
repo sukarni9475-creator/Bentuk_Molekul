@@ -717,6 +717,7 @@ function simpanIdentitas(){
   if(!nm){ pesan.style.display='block'; return; }
   infoMurid.nama=nm; infoMurid.sekolah=sk||"-";
  closeModal('modal-login'); 
+  // Memutar audio langsung dari elemen HTML
 const m = document.getElementById('bgMusic'); 
 if(m) { m.volume = globalVolume; m.play().catch(e => console.log(e)); } 
 goMenu();
