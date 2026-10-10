@@ -33,9 +33,7 @@ const CONFIG = {
     ]
   }
 };
-<audio controls autoplay muted>
-  <source src="asset/audio/backsound.mp3" type="audio/mpeg">
-</audio>
+
 // Mengambil elemen dari index.html
 const btnMulai = document.getElementById('btnMulai'); // Sesuaikan ID tombol
 const bgMusic = document.getElementById('bgMusic');
