@@ -719,7 +719,7 @@ function simpanIdentitas(){
  closeModal('modal-login'); 
   // Memutar audio langsung dari elemen HTML
 const m = document.getElementById('bgMusic'); 
-if(m) { m.volume = globalVolume; m.play().catch(e => console.log(e)); } 
+if(m) { m.volume = globalVolume; m.play().catch(e => console.log("Audio terblokir browser:", e)); } 
 goMenu();
 }
 
