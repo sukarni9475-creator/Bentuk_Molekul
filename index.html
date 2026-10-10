@@ -716,7 +716,10 @@ function simpanIdentitas(){
   const pesan=document.getElementById('login-pesan');
   if(!nm){ pesan.style.display='block'; return; }
   infoMurid.nama=nm; infoMurid.sekolah=sk||"-";
-  closeModal('modal-login'); play('bgm'); goMenu();
+ closeModal('modal-login'); 
+const m = document.getElementById('bgMusic'); 
+if(m) { m.volume = globalVolume; m.play().catch(e => console.log(e)); } 
+goMenu();
 }
 
 /* ---- UTIL ---- */
